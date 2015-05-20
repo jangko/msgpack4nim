@@ -5,7 +5,7 @@
 ###why another implementation?
 I am fully aware of [another](https://github.com/akiradeveloper/msgpack-nim) msgpack implementation written in nim. But I want something easier to use. Another motivation come from the nim language itself. The current version of nim compiler offer many improvements, including 'generics ' specialization. I found out nim compiler is smart enough to make serialization/deserialization to/from msgpack easy and convenient.
 
-**requiment: ** nim ver 0.11.2 or later
+*requiment: * nim ver 0.11.2 or later
 
 ## Example
 
