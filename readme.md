@@ -92,7 +92,7 @@ s.unpack(x) #unpack as usual
 | true/false/nil | true/false/nil |
 | procedural type | ignored  |
 | float32/64 | float32/64 |
-| string | string |
+| string | string8/16/32 |
 | array/seq | array |
 | set | array |
 | range/subrange | int8/16/32/64 |
@@ -108,10 +108,45 @@ s.unpack(x) #unpack as usual
 
 object/tuple by default converted to msgpack array, however
 you can tell the compiler to convert it to map by supplying --define:msgpack_obj_to_map
-when you compile your project
 
 ```shell
 nim c --define:msgpack_obj_to_map yourfile.nim
 ```
 
+##bin and ext format
+
+this implementation provide function to encode/decode msgpack bin/ext format header, but for the body, you must write it yourself to the StringStream
+	
+* proc pack_bin*(s: Stream, len: int)
+* proc pack_ext*(s: Stream, len: int, exttype: int8)
+* proc unpack_bin*(s: Stream): int
+* proc unpack_ext*(s: Stream): tuple[exttype:uint8, len: int]
+
+```nimrod
+import streams, msgpack
+
+const exttype0 = 0
+
+var s = newStringStream()
+var body = "this is the body"
+
+s.pack_ext(body.len, exttype0)
+s.write(body)
+
+#the same goes to bin format
+s.pack_bin(body.len)
+s.write(body)
+
+s.setPosition(0)
+#unpack_ext return tuple[exttype:uint8, len: int]
+let (extype, extlen) = s.unpack_ext()
+var extbody = s.readStr(extlen)
+
+assert extbody == body
+
+let binlen = s.unpack_bin()
+var binbody = s.readStr(binlen)
+
+assert binbody == body
+```
 enjoy it, happy nim-ing
