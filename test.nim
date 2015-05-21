@@ -551,6 +551,20 @@ proc test() =
   testMap()
   testArray()
   testTuple()
+  
+  var a = @[1,2,3,4,5,6,7,8,9,0]
+  var buf = pack(a)
+  var aa: seq[int]
+  unpack(buf, aa)
+  assert a == aa
+  
+  type
+    functype = object
+      fn: proc(x:int)
+  
+  var b : functype
+  var msg = pack(b)
+  
   echo "OK"
   
 test()

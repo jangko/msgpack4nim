@@ -643,16 +643,38 @@ proc pack*[T: enum](s: Stream, val: T) =
   pack_int_imp_select(s, val)
   
 proc pack*[T: tuple|object](s: Stream, val: T) =
+  var len = 0
   for field in fields(val):
-    s.pack field
+    inc(len)
+    
+  when defined(msgpack_obj_to_map):
+    s.pack_map(len)
+    for field, value in fieldPairs(val):
+      s.pack field
+      s.pack value
+  else:
+    s.pack_array(len)
+    for field in fields(val):
+      s.pack field
 
 proc pack*[T: ref](s: Stream, val: T) =
   if isNil(val): s.pack_imp_nil()
   else:
     let vald = val[]
+    var len = 0
     for field in fields(vald):
-      s.pack field
-
+      inc(len)
+        
+    when defined(msgpack_obj_to_map):
+      s.pack_map(len)
+      for field, value in fieldPairs(vald):
+        s.pack field
+        s.pack value
+    else:
+      s.pack_array(len)
+      for field in fields(vald):
+        s.pack field
+        
 proc unpack*(s: Stream, val: var bool) =
   let c = s.readChar
   if c == chr(0xc3): val = true
@@ -984,8 +1006,16 @@ proc unpack*[T: enum](s: Stream, val: var T) =
   val = T(s.unpack_int_imp_select())
   
 proc unpack*[T: tuple|object](s: Stream, val: var T) =
-  for field in fields(val):
-    s.unpack field
+  when defined(msgpack_obj_to_map):
+    let len = s.unpack_map()
+    var name: string
+    for field, value in fieldPairs(val):
+      s.unpack name
+      s.unpack value
+  else:
+    let len = s.unpack_array()
+    for field in fields(val):
+      s.unpack field
 
 proc unpack*[T: ref](s: Stream, val: T) =
   let pos = s.getPosition()
@@ -995,8 +1025,16 @@ proc unpack*[T: ref](s: Stream, val: T) =
   
   s.setPosition(pos)
   let vald = val[]
-  for field in fields(vald):
-    s.unpack field
+  when defined(msgpack_obj_to_map):
+    let len = s.unpack_map()
+    var name: string
+    for field, value in fieldPairs(val):
+      s.unpack name
+      s.unpack value
+  else:
+    let len = s.unpack_array()
+    for field in fields(vald):
+      s.unpack field
 
 proc unpack_bin*(s: Stream): int =
   let c = s.readChar
@@ -1042,3 +1080,21 @@ proc unpack_ext*(s: Stream): tuple[exttype:uint8, len: int] =
       result = (t, len)
     else:
       raise conversionError("ext")
+
+proc pack*[T](val: T): string =
+  var s = newStringStream()
+  s.pack(val)
+  result = s.data
+
+proc unpack*[T](data: string, val: var T) =
+  var s = newStringStream(data)
+  s.setPosition(0)
+  s.unpack(val)
+
+proc pack*[T: proc](s: Stream, val: T) =
+  discard
+  #raise conversionError("can't convert proc type")
+  
+proc unpack*[T: proc](s: Stream, val: var T) =
+  discard
+  #raise conversionError("can't convert proc type")
