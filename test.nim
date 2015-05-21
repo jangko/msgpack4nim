@@ -562,9 +562,19 @@ proc test() =
     functype = object
       fn: proc(x:int)
   
+    Horse = object
+      legs: int
+      speed: int
+      color: string
+      name: string
+      
   var b : functype
   var msg = pack(b)
   
+  var cc = Horse(legs:4, speed:150, color:"black", name:"stallion")
+  var zz = pack(cc)
+  echo stringify(zz)
+    
   echo "OK"
   
 test()

@@ -149,4 +149,28 @@ var binbody = s.readStr(binlen)
 
 assert binbody == body
 ```
+
+##stringify
+
+you can convert msgpack data to readable string using stringify function
+
+```nimrod
+  type
+    Horse = object
+      legs: int
+      speed: int
+      color: string
+      name: string
+  
+  var cc = Horse(legs:4, speed:150, color:"black", name:"stallion")
+  var zz = pack(cc)
+  echo stringify(zz)
+```
+
+the result will be:
+
+```json
+{ "legs" : 4, "speed" : 150, "color" : "black", "name" : "stallion" }
+```
+
 enjoy it, happy nim-ing

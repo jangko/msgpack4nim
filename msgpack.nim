@@ -1098,3 +1098,107 @@ proc pack*[T: proc](s: Stream, val: T) =
 proc unpack*[T: proc](s: Stream, val: var T) =
   discard
   #raise conversionError("can't convert proc type")
+
+proc stringify(s: Stream, zz: Stream) =
+  let pos = s.getPosition()
+  let c = ord(s.readChar)
+  var len = 0
+  case c
+  of 0x00..0x7f:
+    zz.write($c)
+  of 0x80..0x8f:
+    s.setPosition(pos)
+    len = s.unpack_map()
+    zz.write("{ ")
+    for i in 0..len-1:
+      if i > 0: zz.write(", ")
+      stringify(s, zz)
+      zz.write(" : ")
+      stringify(s, zz)
+    zz.write(" }")
+  of 0x90..0x9f:
+    s.setPosition(pos)
+    len = s.unpack_array()
+    zz.write("[ ")
+    for i in 0..len-1:
+      if i > 0: zz.write(", ")
+      stringify(s, zz)
+    zz.write(" ]")
+  of 0xa0..0xbf:
+    s.setPosition(pos)
+    len = s.unpack_string()
+    let str = s.readStr(len)
+    zz.write("\"" & str & "\"")
+  of 0xc0:
+    zz.write("null")
+  of 0xc1:
+    raise conversionError("stringify unused")
+  of 0xc2:
+    zz.write("false")
+  of 0xc3:
+    zz.write("true")
+  of 0xc4..0xc6:
+    s.setPosition(pos)
+    len = s.unpack_bin()
+    let str = s.readStr(len)
+    for cc in str:
+      zz.write(toHex(ord(cc), 2))
+  of 0xc7..0xc9:
+    s.setPosition(pos)
+    let (exttype, extlen) = s.unpack_ext()
+    let str = s.readStr(extlen)
+    for cc in str:
+      zz.write(toHex(ord(cc), 2))
+  of 0xca:
+    s.setPosition(pos)
+    let f = s.unpack_imp_float32()
+    zz.write($f)
+  of 0xcb:
+    s.setPosition(pos)
+    let f = s.unpack_imp_float64()
+    zz.write($f)
+  of 0xcc..0xcf:
+    s.setPosition(pos)
+    let f = s.unpack_imp_uint64()
+    zz.write($f)
+  of 0xd0..0xd3:
+    s.setPosition(pos)
+    let f = s.unpack_imp_int64()
+    zz.write($f)
+  of 0xd4..0xd8:
+    s.setPosition(pos)
+    let (exttype, extlen) = s.unpack_ext()
+    let str = s.readStr(extlen)
+    for cc in str:
+      zz.write(toHex(ord(cc), 2))
+  of 0xd9..0xdb:
+    s.setPosition(pos)
+    len = s.unpack_string()
+    let str = s.readStr(len)
+    zz.write("\"" & str & "\"")
+  of 0xdc..0xdd:
+    s.setPosition(pos)
+    len = s.unpack_array()
+    zz.write("[ ")
+    for i in 0..len-1:
+      if i > 0: zz.write(", ")
+      stringify(s, zz)
+    zz.write(" ]")
+  of 0xde..0xdf:
+    s.setPosition(pos)
+    len = s.unpack_map()
+    zz.write("{ ")
+    for i in 0..len-1:
+      if i > 0: zz.write(", ")
+      stringify(s, zz)
+      zz.write(" : ")
+      stringify(s, zz)
+    zz.write(" }")
+  of 0xe0..0xff:
+    zz.write($cast[int8](c))
+
+proc stringify*(data: string): string =
+  var s = newStringStream(data)
+  var zz = newStringStream()
+  stringify(s, zz)
+  result = zz.data
