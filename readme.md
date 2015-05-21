@@ -170,6 +170,10 @@ you can convert msgpack data to readable string using stringify function
 the result will be:
 
 ```json
+[ 4, 150, "black", "stallion" ]
+
+or like this if msgpack_obj_to_map defined:
+
 { "legs" : 4, "speed" : 150, "color" : "black", "name" : "stallion" }
 ```
 
