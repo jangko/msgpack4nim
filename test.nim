@@ -324,6 +324,11 @@ proc testContainer() =
     var xx = toSeq(items(a))
     var yy = toSeq(items(b))
     result = xx == yy
+  
+  proc `==`(a,b: CritBitTree[void]): bool =
+    var xx = toSeq(items(a))
+    var yy = toSeq(items(b))
+    result = xx == yy
     
   var a = initIntSet()
   a.incl(-2)
@@ -339,6 +344,7 @@ proc testContainer() =
   var f = initQueue[Choco]()
   var g = initSet[Choco]()
   var h = initOrderedSet[Choco]()
+  var k : CritBitTree[void]
   var x = Choco(a:1,b:2)
   var y = Choco(a:3,b:4)
   b.prepend(x)
@@ -355,6 +361,8 @@ proc testContainer() =
   g.incl(y)
   h.incl(x)
   h.incl(y)
+  k.incl("hello")
+  k.incl("world")
   
   var s = newStringStream()
   s.pack(a)
@@ -365,6 +373,7 @@ proc testContainer() =
   s.pack(f)
   s.pack(g)
   s.pack(h)
+  s.pack(k)
   
   s.setPosition(0)
   var aa: IntSet
@@ -375,6 +384,7 @@ proc testContainer() =
   var ff: Queue[Choco]
   var gg: HashSet[Choco]
   var hh: OrderedSet[Choco]
+  var kk: CritBitTree[void]
   
   s.unpack(aa)
   s.unpack(bb)
@@ -384,6 +394,7 @@ proc testContainer() =
   s.unpack(ff)
   s.unpack(gg)
   s.unpack(hh)
+  s.unpack(kk)
   
   assert aa == a
   assert bb == b
@@ -393,6 +404,7 @@ proc testContainer() =
   assert ff == f
   assert gg == g
   assert hh == h
+  assert kk == k
   
   echo "container"
 

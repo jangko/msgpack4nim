@@ -622,6 +622,10 @@ proc pack*(s: Stream, val: StringTableRef) =
   if isNil(val): s.pack_imp_nil()
   else:
     s.pack_map_imp(val)
+
+proc pack*(s: Stream, val: CritBitTree[void]) =
+  s.pack_array(val.len)
+  for i in items(val): s.pack(i)
   
 proc pack*[T](s: Stream, val: CritBitTree[T]) =
   s.pack_map_imp(val)
@@ -652,6 +656,9 @@ proc pack*[T: tuple|object](s: Stream, val: T) =
     for field, value in fieldPairs(val):
       s.pack field
       s.pack value
+  elif defined(msgpack_obj_to_stream):
+    for field in fields(val):
+      s.pack field
   else:
     s.pack_array(len)
     for field in fields(val):
@@ -670,6 +677,9 @@ proc pack*[T: ref](s: Stream, val: T) =
       for field, value in fieldPairs(vald):
         s.pack field
         s.pack value
+    elif defined(msgpack_obj_to_stream):
+      for field in fields(vald):
+        s.pack field
     else:
       s.pack_array(len)
       for field in fields(vald):
@@ -966,6 +976,14 @@ proc unpack*(s: Stream, val: var StringTableRef) =
     s.unpack(k)
     s.unpack(v)
     val[k] = v
+    
+proc unpack*(s: Stream, val: var CritBitTree[void]) =
+  let len = s.unpack_array()
+  if len < 0: raise conversionError("critbit tree")
+  var key: string
+  for i in 0..len-1:
+    s.unpack(key)
+    val.incl(key)
   
 proc unpack*[T](s: Stream, val: var CritBitTree[T]) =
   let len = s.unpack_map()
@@ -1012,8 +1030,13 @@ proc unpack*[T: tuple|object](s: Stream, val: var T) =
     for field, value in fieldPairs(val):
       s.unpack name
       s.unpack value
+  elif defined(msgpack_obj_to_stream):
+    for field in fields(val):
+      s.unpack field
   else:
-    let len = s.unpack_array()
+    #perhaps we need to check number of fields
+    #against array's length?
+    discard s.unpack_array()
     for field in fields(val):
       s.unpack field
 
@@ -1031,6 +1054,9 @@ proc unpack*[T: ref](s: Stream, val: T) =
     for field, value in fieldPairs(val):
       s.unpack name
       s.unpack value
+  elif defined(msgpack_obj_to_stream):
+    for field in fields(val):
+      s.unpack field
   else:
     let len = s.unpack_array()
     for field in fields(vald):
@@ -1200,5 +1226,7 @@ proc stringify(s: Stream, zz: Stream) =
 proc stringify*(data: string): string =
   var s = newStringStream(data)
   var zz = newStringStream()
-  stringify(s, zz)
+  while not s.atEnd():
+    stringify(s, zz)
+    zz.write(" ")
   result = zz.data
