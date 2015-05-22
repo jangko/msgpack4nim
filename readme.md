@@ -116,7 +116,7 @@ you can tell the compiler to convert it to map by supplying --define:msgpack_obj
 nim c --define:msgpack_obj_to_map yourfile.nim
 ```
 
-or --define:msgpack_obj_to_stream to convert object/tuple *fields* into stream of msgpack objects
+or --define:msgpack_obj_to_stream to convert object/tuple fields *value* into stream of msgpack objects
 ```shell
 nim c --define:msgpack_obj_to_stream yourfile.nim
 ```

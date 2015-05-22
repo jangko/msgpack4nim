@@ -103,14 +103,80 @@ s.unpack(x) #unpack as usual
 | Table,TableRef | map |
 | OrderedTable,OrderedTableRef | map |
 | StringTableRef | map |
-| CritBitTree | map |
+| CritBitTree[T] | map |
+| CritBitTree[void] | array |
 | object/tuple | array/map |
 
-object/tuple by default converted to msgpack array, however
+##object and tuple
+
+object and tuple by default converted to msgpack array, however
 you can tell the compiler to convert it to map by supplying --define:msgpack_obj_to_map
 
 ```shell
 nim c --define:msgpack_obj_to_map yourfile.nim
+```
+
+or --define:msgpack_obj_to_stream to convert object/tuple fields *value* into stream of msgpack objects
+```shell
+nim c --define:msgpack_obj_to_stream yourfile.nim
+```
+
+ **Restriction**: 
+ For objects their type is **not** serialized. This means essentially that it does not work if the object has some other runtime type than its compiletime type:
+
+```nimrod
+import streams, msgpack
+
+type
+  TA = object of RootObj
+  TB = object of TA
+    f: int
+
+var
+  a: ref TA
+  b: ref TB
+
+new(b)
+a = b
+
+echo stringify(pack(a)) 
+#produces "[ ]" or "{ }"
+#not "[ 0 ]" or '{ "f" : 0 }'
+```
+**Gotchas:**
+because data conversion did not preserve original data types, the following code is perfectly valid and will raise no exception
+
+```nimrod
+import msgpack, streams, tables, sets, strtabs
+
+type
+  Horse = object
+    legs: int
+    foals: seq[string]
+    attr: Table[string, string]
+    
+  Cat = object
+    legs: uint8
+    kittens: HashSet[string]
+    traits: StringTableRef
+    
+proc initHorse(): Horse =
+  result.legs = 4
+  result.foals = @["jilly", "colt"]
+  result.attr = initTable[string, string]()
+  result.attr["color"] = "black"
+  result.attr["speed"] = "120mph"
+
+var stallion = initHorse()
+var tom: Cat
+
+var buf = pack(stallion) #pack a Horse here
+unpack(buf, tom) 
+#magically, it will unpack into a Cat
+
+echo "legs: ", $tom.legs
+echo "kittens: ", $tom.kittens
+echo "traits: ", $tom.traits
 ```
 
 ##bin and ext format
@@ -170,11 +236,15 @@ you can convert msgpack data to readable string using stringify function
 the result will be:
 
 ```json
+default:
 [ 4, 150, "black", "stallion" ]
 
-or like this if msgpack_obj_to_map defined:
-
+msgpack_obj_to_map defined:
 { "legs" : 4, "speed" : 150, "color" : "black", "name" : "stallion" }
+
+msgpack_obj_to_stream defined:
+4 150 "black" "stallion"
 ```
 
 enjoy it, happy nim-ing
+
