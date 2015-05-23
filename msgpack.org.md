@@ -93,6 +93,8 @@ s.unpack(x) #unpack as usual
 | procedural type | ignored  |
 | cstring | ignored  |
 | ptr | ignored  |
+| ref | [see ref-types](#ref-types) |
+| circular ref | [see ref-types](#ref-types) |
 | distinct types | [see limitation](#limitation) |
 | float32/64 | float32/64 |
 | string | string8/16/32 |
@@ -124,7 +126,17 @@ or --define:msgpack_obj_to_stream to convert object/tuple fields *value* into st
 nim c --define:msgpack_obj_to_stream yourfile.nim
 ```
 
- **Restriction**: 
+####**ref-types:**
+*ref something* :
+
+* if ref value is nil, it will be packed into msgpack nil, and when unpacked, usually will do nothing except seq[T] will be @[]
+* if ref value not nil, it will be dereferenced e.g. pack(val[]) or unpack(val[])
+* ref subject to some restriction. see **restriction** below
+
+*circular reference*:
+altough detecting circular reference is not too difficult(using set of pointers), the current implementation does not provide circular reference detection. If you pack something contains circular reference, you know something bad will happened
+
+**Restriction**: 
  For objects their type is **not** serialized. This means essentially that it does not work if the object has some other runtime type than its compiletime type:
 
 ```nimrod
@@ -190,7 +202,7 @@ var tom: Cat
 
 var buf = pack(stallion) #pack a Horse here
 unpack(buf, tom) 
-#magically, it will unpack into a Cat
+#abracadabra, it will unpack into a Cat
 
 echo "legs: ", $tom.legs
 echo "kittens: ", $tom.kittens
@@ -265,5 +277,6 @@ msgpack_obj_to_stream defined:
 ```
 
 enjoy it, happy nim-ing
+
 
 
