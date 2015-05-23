@@ -91,6 +91,9 @@ s.unpack(x) #unpack as usual
 | uint8/16/32/64 | uint8/16/32/64 |
 | true/false/nil | true/false/nil |
 | procedural type | ignored  |
+| cstring | ignored  |
+| ptr | ignored  |
+| distinct types | [see limitation](#limitation) |
 | float32/64 | float32/64 |
 | string | string8/16/32 |
 | array/seq | array |
@@ -143,6 +146,21 @@ echo stringify(pack(a))
 #produces "[ ]" or "{ }"
 #not "[ 0 ]" or '{ "f" : 0 }'
 ```
+####**limitation:**
+
+these types will be ignored:
+
+* procedural type
+* cstring(it is not safe to assume it always terminated by null)
+* ptr(don't know what it is behind this pointer)
+
+these types cannot be automatically pack/unpacked:
+
+* *void* (will cause compile time error)
+* distinct types(you must provide your own handler)
+
+however, you can provide your own handler for cstring, ptr, and distinct types
+
 **Gotchas:**
 because data conversion did not preserve original data types, the following code is perfectly valid and will raise no exception
 
@@ -247,4 +265,5 @@ msgpack_obj_to_stream defined:
 ```
 
 enjoy it, happy nim-ing
+
 

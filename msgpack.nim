@@ -1,5 +1,3 @@
-# Copyright (c) 2015 Andri Lim
-#
 # MessagePack implementation written in nim
 # 
 # Copyright (c) 2015 Andri Lim
@@ -470,7 +468,7 @@ proc pack*(s: Stream, val: char) =
   s.pack_imp_uint8(ord(val))
 
 proc pack*(s: Stream, val: string) =
-  if val == nil: s.pack_imp_nil()
+  if isNil(val): s.pack_imp_nil()
   else:
     s.pack_string(val.len)
     s.write(val)
@@ -635,7 +633,7 @@ proc pack*[T](s: Stream, val: openarray[T]) =
   for i in 0..val.len-1: s.pack(val[i])
 
 proc pack*[T](s: Stream, val: seq[T]) =
-  if val == nil: s.pack_imp_nil()
+  if isNil(val): s.pack_imp_nil()
   else:
     s.pack_array(val.len)
     for i in 0..val.len-1: s.pack(val[i])
@@ -645,7 +643,7 @@ proc pack*[T: range](s: Stream, val: T) =
 
 proc pack*[T: enum](s: Stream, val: T) =
   pack_int_imp_select(s, val)
-  
+
 proc pack*[T: tuple|object](s: Stream, val: T) =
   var len = 0
   for field in fields(val):
@@ -666,24 +664,7 @@ proc pack*[T: tuple|object](s: Stream, val: T) =
 
 proc pack*[T: ref](s: Stream, val: T) =
   if isNil(val): s.pack_imp_nil()
-  else:
-    let vald = val[]
-    var len = 0
-    for field in fields(vald):
-      inc(len)
-        
-    when defined(msgpack_obj_to_map):
-      s.pack_map(len)
-      for field, value in fieldPairs(vald):
-        s.pack field
-        s.pack value
-    elif defined(msgpack_obj_to_stream):
-      for field in fields(vald):
-        s.pack field
-    else:
-      s.pack_array(len)
-      for field in fields(vald):
-        s.pack field
+  else: s.pack(val[])
         
 proc unpack*(s: Stream, val: var bool) =
   let c = s.readChar
@@ -711,8 +692,7 @@ proc unpack_string(s: Stream): int =
 
 proc unpack*(s: Stream, val: var string) =
   let pos = s.getPosition()
-  let c = s.readChar
-  if c == pack_value_nil: 
+  if s.readChar == pack_value_nil: 
     val = ""
     return
   
@@ -914,9 +894,7 @@ proc unpack*[K,V](s: Stream, val: var Table[K,V]) =
 
 proc unpack*[K,V](s: Stream, val: var TableRef[K,V]) =
   let pos = s.getPosition()
-  let c = s.readChar
-  if c == pack_value_nil: 
-    return
+  if s.readChar == pack_value_nil: return
   
   s.setPosition(pos)
   let len = s.unpack_map()
@@ -944,9 +922,7 @@ proc unpack*[K,V](s: Stream, val: var OrderedTable[K,V]) =
 
 proc unpack*[K,V](s: Stream, val: var OrderedTableRef[K,V]) =
   let pos = s.getPosition()
-  let c = s.readChar
-  if c == pack_value_nil: 
-    return
+  if s.readChar == pack_value_nil: return
   
   s.setPosition(pos)
   let len = s.unpack_map()
@@ -962,9 +938,7 @@ proc unpack*[K,V](s: Stream, val: var OrderedTableRef[K,V]) =
   
 proc unpack*(s: Stream, val: var StringTableRef) =
   let pos = s.getPosition()
-  let c = s.readChar
-  if c == pack_value_nil: 
-    return
+  if s.readChar == pack_value_nil: return
   
   s.setPosition(pos)
   let len = s.unpack_map()
@@ -998,8 +972,7 @@ proc unpack*[T](s: Stream, val: var CritBitTree[T]) =
 
 proc unpack*[T](s: Stream, val: var seq[T]) =
   let pos = s.getPosition()
-  let c = s.readChar
-  if c == pack_value_nil:
+  if s.readChar == pack_value_nil:
     val = @[]
     return
   
@@ -1040,28 +1013,13 @@ proc unpack*[T: tuple|object](s: Stream, val: var T) =
     for field in fields(val):
       s.unpack field
 
-proc unpack*[T: ref](s: Stream, val: T) =
+proc unpack*[T: ref](s: Stream, val: var T) =
   let pos = s.getPosition()
-  let c = s.readChar
-  if c == pack_value_nil: 
-    return
-  
+  if s.readChar == pack_value_nil: return
   s.setPosition(pos)
-  let vald = val[]
-  when defined(msgpack_obj_to_map):
-    let len = s.unpack_map()
-    var name: string
-    for field, value in fieldPairs(val):
-      s.unpack name
-      s.unpack value
-  elif defined(msgpack_obj_to_stream):
-    for field in fields(val):
-      s.unpack field
-  else:
-    let len = s.unpack_array()
-    for field in fields(vald):
-      s.unpack field
-
+  if isNil(val): new(val)
+  s.unpack(val[])
+  
 proc unpack_bin*(s: Stream): int =
   let c = s.readChar
   if c == chr(0xc4):
@@ -1125,6 +1083,22 @@ proc unpack*[T: proc](s: Stream, val: var T) =
   discard
   #raise conversionError("can't convert proc type")
 
+proc pack*(s: Stream, val: ptr) =
+  discard
+  #raise conversionError("can't convert ptr type")
+  
+proc unpack*(s: Stream, val: var ptr) =
+  discard
+  #raise conversionError("can't convert ptr type")
+
+proc pack*(s: Stream, val: cstring) =
+  discard
+  #raise conversionError("can't convert cstring type")
+  
+proc unpack*(s: Stream, val: var cstring) =
+  discard
+  #raise conversionError("can't convert cstring type")
+  
 proc stringify(s: Stream, zz: Stream) =
   let pos = s.getPosition()
   let c = ord(s.readChar)

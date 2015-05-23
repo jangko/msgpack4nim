@@ -551,19 +551,7 @@ proc testTuple() =
   
   echo "tuple"
 
-proc test() =
-  testOrdinal()
-  testOrdinal2()
-  testOrdinal3()
-  testOrdinal4()
-  testString()
-  testReal()
-  testSet()
-  testContainer()
-  testMap()
-  testArray()
-  testTuple()
-  
+proc otherTest() =
   var a = @[1,2,3,4,5,6,7,8,9,0]
   var buf = pack(a)
   var aa: seq[int]
@@ -586,7 +574,73 @@ proc test() =
   var cc = Horse(legs:4, speed:150, color:"black", name:"stallion")
   var zz = pack(cc)
   echo stringify(zz)
-    
+
+proc refTest() =  
+  var refint: ref int
+  new(refint)
+  refint[] = 45
+  
+  var s = newStringStream()
+  s.pack(refint)
+  
+  var buf = pack(refint)
+  echo stringify(buf)
+  
+  type
+    Ghost = ref object
+      body: ref float
+      legs: ref int
+      hair: ref int64
+  
+  var g: Ghost
+  new(g)
+  new(g.body)
+  new(g.legs)
+  new(g.hair)
+
+  buf = pack(g)
+  echo buf.stringify()
+  
+  var h: Ghost
+  unpack(buf, h)
+  echo "ghost: ", $h.body[]
+  
+  #type
+  #  Ghostly = object
+  #    legs: void
+  #    body: void
+  #    
+  #var j: Ghostly
+  #pack(j)
+  
+  var rr: ptr Chocolate
+  var tt: cstring
+  
+  discard pack(rr)
+  discard pack(tt)
+  
+  #type
+  #  ship = distinct string
+  #  
+  #var airship: ship = ship("plane")
+  #pack(airship)
+  
+proc test() =
+  testOrdinal()
+  testOrdinal2()
+  testOrdinal3()
+  testOrdinal4()
+  testString()
+  testReal()
+  testSet()
+  testContainer()
+  testMap()
+  testArray()
+  testTuple()
+  otherTest()
+  refTest()
+
+  
   echo "OK"
   
 test()
