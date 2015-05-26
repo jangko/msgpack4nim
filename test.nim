@@ -619,11 +619,30 @@ proc refTest() =
   discard pack(rr)
   discard pack(tt)
   
-  #type
-  #  ship = distinct string
-  #  
-  #var airship: ship = ship("plane")
-  #pack(airship)
+  type
+    ship = distinct string
+    
+  var airship: ship = ship("plane")
+  buf  = pack(airship)
+  echo stringify buf
+  unpack(buf, airship)
+
+proc testInheritance() =  
+  type
+    KAB = object of RootObj
+      aaa: int
+      bbb: int
+    
+    KCD = object of KAB
+      ccc: int
+      ddd: int
+    
+    KEF = object of KCD
+      eee: int
+      fff: int
+      
+  var kk = KEF()
+  echo stringify(pack(kk))
   
 proc test() =
   testOrdinal()
@@ -639,6 +658,7 @@ proc test() =
   testTuple()
   otherTest()
   refTest()
+  testInheritance()
 
   
   echo "OK"

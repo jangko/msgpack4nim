@@ -92,10 +92,10 @@ s.unpack(x) #unpack as usual
 | true/false/nil | true/false/nil |
 | procedural type | ignored  |
 | cstring | ignored  |
-| ptr | ignored  |
+| ptr | [see ref-types](#ref-types) |
 | ref | [see ref-types](#ref-types) |
 | circular ref | [see ref-types](#ref-types) |
-| distinct types | [see limitation](#limitation) |
+| distinct types | converted to base type |
 | float32/64 | float32/64 |
 | string | string8/16/32 |
 | array/seq | array |
@@ -132,6 +132,7 @@ nim c --define:msgpack_obj_to_stream yourfile.nim
 * if ref value is nil, it will be packed into msgpack nil, and when unpacked, usually will do nothing except seq[T] will be @[]
 * if ref value not nil, it will be dereferenced e.g. pack(val[]) or unpack(val[])
 * ref subject to some restriction. see **restriction** below
+* ptr will be treated like ref
 
 *circular reference*:
 altough detecting circular reference is not too difficult(using set of pointers), the current implementation does not provide circular reference detection. If you pack something contains circular reference, you know something bad will happened
@@ -164,14 +165,12 @@ these types will be ignored:
 
 * procedural type
 * cstring(it is not safe to assume it always terminated by null)
-* ptr(don't know what it is behind this pointer)
 
 these types cannot be automatically pack/unpacked:
 
 * *void* (will cause compile time error)
-* distinct types(you must provide your own handler)
 
-however, you can provide your own handler for cstring, ptr, and distinct types
+however, you can provide your own handler for cstring
 
 **Gotchas:**
 because data conversion did not preserve original data types, the following code is perfectly valid and will raise no exception
@@ -207,6 +206,28 @@ unpack(buf, tom)
 echo "legs: ", $tom.legs
 echo "kittens: ", $tom.kittens
 echo "traits: ", $tom.traits
+```
+
+another gotcha:
+
+```nimrod
+  type
+    KAB = object of RootObj
+      aaa: int
+      bbb: int
+    
+    KCD = object of KAB
+      ccc: int
+      ddd: int
+    
+    KEF = object of KCD
+      eee: int
+      fff: int
+      
+  var kk = KEF()
+  echo stringify(pack(kk))
+  # will produce "{ "eee" : 0, "fff" : 0, "ccc" : 0, "ddd" : 0, "aaa" : 0, "bbb" : 0 }"
+  # not "{ "aaa" : 0, "bbb" : 0, "ccc" : 0, "ddd" : 0, "eee" : 0, "fff" : 0 }"
 ```
 
 ##bin and ext format
@@ -277,6 +298,7 @@ msgpack_obj_to_stream defined:
 ```
 
 enjoy it, happy nim-ing
+
 
 
 
