@@ -567,7 +567,7 @@ proc pack_items_imp[T](s: Stream, val: T) {.inline.} =
   var ss = newStringStream()
   var count = 0
   for i in items(val):
-    ss.pack(i)
+    ss.pack undistinct(i)
     inc(count)
   s.pack_array(count)
   s.write(ss.data)
@@ -595,21 +595,21 @@ proc pack_type*[T](s: Stream, val: DoublyLinkedRing[T]) =
 
 proc pack_type*[T](s: Stream, val: Queue[T]) =
   s.pack_array(val.len)
-  for i in items(val): s.pack(i)
+  for i in items(val): s.pack_type undistinct(i)
 
 proc pack_type*[T](s: Stream, val: HashSet[T]) =
   s.pack_array(val.len)
-  for i in items(val): s.pack(i)
+  for i in items(val): s.pack_type undistinct(i)
 
 proc pack_type*[T](s: Stream, val: OrderedSet[T]) =
   s.pack_array(val.len)
-  for i in items(val): s.pack(i)
+  for i in items(val): s.pack_type undistinct(i)
 
 proc pack_map_imp[T](s: Stream, val: T) {.inline.} =
   s.pack_map(val.len)
   for k,v in pairs(val): 
-    s.pack_type(k)
-    s.pack_type(v)
+    s.pack_type undistinct(k)
+    s.pack_type undistinct(v)
 
 proc pack_type*[K,V](s: Stream, val: Table[K,V]) =
   s.pack_map_imp(val)
@@ -641,13 +641,13 @@ proc pack_type*[T](s: Stream, val: CritBitTree[T]) =
   
 proc pack_type*[T](s: Stream, val: openarray[T]) =
   s.pack_array(val.len)
-  for i in 0..val.len-1: s.pack(val[i])
+  for i in 0..val.len-1: s.pack_type undistinct(val[i])
 
 proc pack_type*[T](s: Stream, val: seq[T]) =
   if isNil(val): s.pack_imp_nil()
   else:
     s.pack_array(val.len)
-    for i in 0..val.len-1: s.pack(val[i])
+    for i in 0..val.len-1: s.pack_type undistinct(val[i])
 
 proc pack_type*[T: range](s: Stream, val: T) =
   pack_int_imp_select(s, val)
@@ -663,23 +663,23 @@ proc pack_type*[T: tuple|object](s: Stream, val: T) =
   when defined(msgpack_obj_to_map):
     s.pack_map(len)
     for field, value in fieldPairs(val):
-      s.pack field
-      s.pack value
+      s.pack_type field
+      s.pack_type undistinct(value)
   elif defined(msgpack_obj_to_stream):
     for field in fields(val):
-      s.pack field
+      s.pack_type undistinct(field)
   else:
     s.pack_array(len)
     for field in fields(val):
-      s.pack field
+      s.pack_type undistinct(field)
 
 proc pack_type*[T: ref](s: Stream, val: T) =
   if isNil(val): s.pack_imp_nil()
-  else: s.pack(val[])
+  else: s.pack_type(val[])
 
 proc pack_type*[T](s: Stream, val: ptr T) =
   if isNil(val): s.pack_imp_nil()
-  else: s.pack(val[])
+  else: s.pack_type(val[])
   
 proc unpack_type*(s: Stream, val: var bool) =
   let c = s.readChar

@@ -618,14 +618,6 @@ proc refTest() =
   
   discard pack(rr)
   discard pack(tt)
-  
-  type
-    ship = distinct string
-    
-  var airship: ship = ship("plane")
-  buf  = pack(airship)
-  echo stringify buf
-  unpack(buf, airship)
 
 proc testInheritance() =  
   type
@@ -643,6 +635,78 @@ proc testInheritance() =
       
   var kk = KEF()
   echo stringify(pack(kk))
+
+proc testDistinct() =
+  type
+    ship = distinct string
+    boat = distinct int
+  
+    carrier = object
+      one: array[0..5, ship]
+      two: seq[boat]
+      three: SinglyLinkedList[ship]
+      four: DoublyLinkedList[boat]
+      five: SinglyLinkedRing[ship]
+      six: DoublyLinkedRing[boat]
+      seven: Queue[ship]
+      eight: HashSet[boat]
+      nine: OrderedSet[ship]
+      ten: Table[ship, boat]
+      eleven: TableRef[ship, boat]
+      twelve: OrderedTable[boat, ship]
+      thirteen: OrderedTableRef[boat, ship]
+      fourteen: CritBitTree[ship]
+  
+  proc hash(c: ship): THash =
+    var h: THash = 0
+    h = h !& hash(string(c))
+    result = !$ h
+
+  proc hash(c: boat): THash =
+    var h: THash = 0
+    h = h !& int(c)
+    result = !$ h
+
+  proc `==`(a,b: ship): bool = string(a) == string(b)
+  proc `==`(a,b: boat): bool = int(a) == int(b)
+  
+  proc initCarrier(): carrier =
+    for i in 0..5: result.one[i] = ship($i)
+    result.two = @[boat(1), boat(2), boat(3)]
+    result.three = initSinglyLinkedList[ship]()
+    result.three.prepend(ship("three"))
+    result.four = initDoublyLinkedList[boat]()
+    result.four.prepend(boat(44))
+    result.five = initSinglyLinkedRing[ship]()
+    result.five.prepend(ship("five"))
+    result.six = initDoublyLinkedRing[boat]()
+    result.six.prepend(boat(66))
+    result.seven = initQueue[ship]()
+    result.seven.add(ship("seven"))
+    result.eight = initSet[boat]()
+    result.eight.incl(boat(88))
+    result.nine = initOrderedSet[ship]()
+    result.nine.incl(ship("nine"))
+    result.ten = initTable[ship, boat]()
+    result.ten[ship("ten")] = boat(10)
+    result.eleven = newTable[ship, boat]()
+    result.eleven[ship("eleven")] = boat(11)
+    result.twelve = initOrderedTable[boat, ship]()
+    result.twelve[boat(12)] = ship("twelve")
+    result.thirteen = newOrderedTable[boat, ship]()
+    result.thirteen[boat(13)] = ship("thirteen")
+    result.fourteen["fourteen"] = ship("fourteen")
+  
+  var airship: ship = ship("plane")
+  var buf  = pack(airship)
+  echo stringify buf
+  unpack(buf, airship)
+  
+  var cc = initCarrier()
+  buf = pack(cc)
+  echo stringify buf
+  var dd: carrier
+  unpack(buf, dd)
   
 proc test() =
   testOrdinal()
@@ -659,7 +723,7 @@ proc test() =
   otherTest()
   refTest()
   testInheritance()
-
+  testDistinct()
   
   echo "OK"
   
