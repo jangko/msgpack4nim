@@ -56,7 +56,7 @@ if you think setting up a StringStream too much for you, you can simply call pac
 ```
 
 in case the compiler cannot decide how to serialize or deserialize your very very complex object, you can help it in easy way
-
+by defining your own handler pack_type/unpack_type
 ```nimrod
 type
   #not really complex, just for example
@@ -65,12 +65,12 @@ type
     b: someSimpleType
 
 #help the compiler to decide
-proc pack(s: Stream, x: mycomplexobject) =
+proc pack_type*(s: Stream, x: mycomplexobject) =
   s.pack(x.a) # let the compiler decide
   s.pack(x.b) # let the compiler decide
 
 #help the compiler to decide
-proc unpack(s: Stream, x: var complexobject) =
+proc unpack_type*(s: Stream, x: var complexobject) =
   s.unpack(x.a)
   s.unpack(x.b)
 

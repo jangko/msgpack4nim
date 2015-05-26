@@ -396,7 +396,7 @@ proc unpack_imp_int(s: Stream): int =
   of 8: result = int(s.unpack_imp_int64())
   else: raise conversionError("int") 
   
-proc pack_array(s: Stream, len: int) =
+proc pack_array*(s: Stream, len: int) =
   if len <= 0x0F: 
     s.write(chr(0b10010000 or (len and 0x0F)))
   elif len > 0x0F and len <= 0xFFFF: 
@@ -406,7 +406,7 @@ proc pack_array(s: Stream, len: int) =
     s.write(chr(0xdd))
     s.store32(uint32(len))
 
-proc pack_map(s: Stream, len: int) =
+proc pack_map*(s: Stream, len: int) =
   if len <= 0x0F: 
     s.write(chr(0b10000000 or (len and 0x0F)))
   elif len > 0x0F and len <= 0xFFFF: 
@@ -458,7 +458,7 @@ proc pack_ext*(s: Stream, len: int, exttype: int8) =
       s.store32(uint32(len))
       s.write(exttype)
     
-proc pack_string(s: Stream, len: int) =
+proc pack_string*(s: Stream, len: int) =
   if len < 32:
     var d = uint8(0xa0) or uint8(len)
     s.write(take8_8(d))
@@ -694,7 +694,7 @@ proc unpack_type*(s: Stream, val: var char) =
     val = s.readChar
   else: raise conversionError("char")
 
-proc unpack_string(s: Stream): int =
+proc unpack_string*(s: Stream): int =
   result = -1
   let c = s.readChar
   if c >= chr(0xa0) and c <= chr(0xbf): result = ord(c) and 0x1f
@@ -886,7 +886,7 @@ proc unpack_type*[T](s: Stream, val: var OrderedSet[T]) =
     s.unpack(x)
     val.incl(x)
 
-proc unpack_map(s: Stream): int =
+proc unpack_map*(s: Stream): int =
   result = -1
   let c = s.readChar
   if c >= chr(0x80) and c <= chr(0x8f): result = ord(c) and 0x0f
