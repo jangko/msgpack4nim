@@ -90,8 +90,9 @@ s.unpack(x) #unpack as usual
 | int8/16/32/64 | int8/16/32/64 |
 | uint8/16/32/64 | uint8/16/32/64 |
 | true/false/nil | true/false/nil |
-| procedural type | ignored  |
-| cstring | ignored  |
+| procedural type | ignored |
+| cstring | ignored |
+| pointer | ignored |
 | ptr | [see ref-types](#ref-types) |
 | ref | [see ref-types](#ref-types) |
 | circular ref | [see ref-types](#ref-types) |
@@ -132,7 +133,8 @@ nim c --define:msgpack_obj_to_stream yourfile.nim
 * if ref value is nil, it will be packed into msgpack nil, and when unpacked, usually will do nothing except seq[T] will be @[]
 * if ref value not nil, it will be dereferenced e.g. pack(val[]) or unpack(val[])
 * ref subject to some restriction. see **restriction** below
-* ptr will be treated like ref
+* ptr will be treated like ref during pack
+* unpacking ptr will invoke alloc, so you must dealloc it
 
 *circular reference*:
 altough detecting circular reference is not too difficult(using set of pointers), the current implementation does not provide circular reference detection. If you pack something contains circular reference, you know something bad will happened
@@ -165,12 +167,13 @@ these types will be ignored:
 
 * procedural type
 * cstring(it is not safe to assume it always terminated by null)
+* pointer
 
 these types cannot be automatically pack/unpacked:
 
 * *void* (will cause compile time error)
 
-however, you can provide your own handler for cstring
+however, you can provide your own handler for cstring and pointer
 
 **Gotchas:**
 because data conversion did not preserve original data types, the following code is perfectly valid and will raise no exception

@@ -1039,7 +1039,7 @@ proc unpack_type*[T](s: Stream, val: var ptr T) =
   let pos = s.getPosition()
   if s.readChar == pack_value_nil: return
   s.setPosition(pos)
-  if isNil(val): new(val)
+  if isNil(val): val = cast[ptr T](alloc(sizeof(T)))
   s.unpack(val[])
   
 proc unpack_bin*(s: Stream): int =
@@ -1103,6 +1103,14 @@ proc unpack_type*(s: Stream, val: var cstring) =
   discard
   #raise conversionError("can't convert cstring type")
 
+proc pack_type*(s: Stream, val: pointer) =
+  discard
+  #raise conversionError("can't convert pointer type")
+  
+proc unpack_type*(s: Stream, val: var pointer) =
+  discard
+  #raise conversionError("can't convert pointer type")
+  
 proc pack*[T](s: Stream, val: T) = s.pack_type undistinct(val)
 proc unpack*[T](s: Stream, val: var T) = s.unpack_type undistinct(val)
 
