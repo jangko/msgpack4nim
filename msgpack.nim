@@ -748,7 +748,7 @@ template unpack_int_imp_select(s: expr, val: expr) =
   elif sizeof(val) == 4:
     val = s.unpack_imp_int32()
   else: 
-    val = s.unpack_imp_int64()
+    val = int(s.unpack_imp_int64())
 
 template unpack_uint_imp_select(s: expr, val: expr) =
   if sizeof(val) == 1:
@@ -1009,7 +1009,14 @@ proc unpack_type*[T](s: Stream, val: var openarray[T]) =
     val[i] = x
 
 proc unpack_type*[T: enum](s: Stream, val: var T) =
-  val = T(s.unpack_int_imp_select())
+  when sizeof(val) == 1:
+    val = T(s.unpack_imp_int8())
+  elif sizeof(val) == 2:
+    val = T(s.unpack_imp_int16())
+  elif sizeof(val) == 4:
+    val = T(s.unpack_imp_int32())
+  else: 
+    val = T(s.unpack_imp_int64())
   
 proc unpack_type*[T: tuple|object](s: Stream, val: var T) =
   when defined(msgpack_obj_to_map):
