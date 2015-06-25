@@ -6,7 +6,7 @@ type
   Choco = object
     a: int
     b: int
-  
+
   Chocolate = object
     a: Choco
     b: int
@@ -15,28 +15,28 @@ proc hash*(c: Choco): THash =
   var h: THash = 0
   h = h !& c.a
   h = h !& c.b
-  
+
   result = !$ h
-  
+
 proc testOrdinal() =
-  var 
+  var
     s = newStringStream()
     a = true
     b = false
-    
+
   s.pack(a)
   s.pack(b)
   for i in low(char)..high(char): s.pack(i)
   for i in low(int8)..high(int8): s.pack(i)
   for i in low(uint8)..high(uint8): s.pack(i)
 
-  s.setPosition(0)  
+  s.setPosition(0)
   var aa,bb:bool
   s.unpack(aa)
   s.unpack(bb)
   assert aa == a
   assert bb == b
-  
+
   var cc: char
   var dd: int8
   var ee: uint8
@@ -44,40 +44,40 @@ proc testOrdinal() =
     s.unpack(cc)
     assert cc == i
   echo "char"
-  
+
   for i in low(int8)..high(int8):
     s.unpack(dd)
     assert dd == i
   echo "int8"
-  
+
   for i in low(uint8)..high(uint8):
     s.unpack(ee)
     assert ee == i
   echo "uint8"
 
 proc testOrdinal2() =
-  
+
   block escape:
     while true:
       var s = newStringStream()
       for i in low(int16)..high(int16): s.pack(i)
       s.setPosition(0)
       var x: int16
-      for i in low(int16)..high(int16): 
+      for i in low(int16)..high(int16):
         s.unpack(x)
         if x != i:
           echo "miss: ", $x, " vs ", $i
           break escape
       echo "int16"
       break
-  
+
   block escape2:
     while true:
       var s = newStringStream()
       for i in low(uint16)..high(uint16): s.pack(i)
       s.setPosition(0)
       var x: uint16
-      for i in low(uint16)..high(uint16): 
+      for i in low(uint16)..high(uint16):
         s.unpack(x)
         if x != i:
           echo "miss: ", $x, " vs ", $i
@@ -86,7 +86,7 @@ proc testOrdinal2() =
       break
 
 proc testOrdinal3() =
-  var uu = [low(int32), low(int32)+1, low(int32)+2, high(int32)-1, 
+  var uu = [low(int32), low(int32)+1, low(int32)+2, high(int32)-1,
     high(int32)-2, low(int8)-2, low(int8)-1, low(int8), low(int8)+1,
     low(int8)+2, low(int16)-2, low(int16)-1, low(int16), low(int16)+1,
     low(int16)+2, high(int8)-2, high(int8)-1, high(int8), high(int8)+1,
@@ -97,7 +97,7 @@ proc testOrdinal3() =
     while true:
       var s = newStringStream()
       var x: int32
-      for i in uu: 
+      for i in uu:
         s.pack(i)
         s.setPosition(0)
         s.unpack(x)
@@ -108,9 +108,9 @@ proc testOrdinal3() =
 
       echo "int32"
       break
-  
-  var vv = [low(uint32), low(uint32)+1, low(uint32)+2, high(uint32), high(uint32)-1, 
-    high(uint32)-2, low(uint8), low(uint8)+1, low(uint8)+2, low(uint16)+1, 
+
+  var vv = [low(uint32), low(uint32)+1, low(uint32)+2, high(uint32), high(uint32)-1,
+    high(uint32)-2, low(uint8), low(uint8)+1, low(uint8)+2, low(uint16)+1,
     low(uint16)+2, high(uint8)-2, high(uint8)-1, high(uint8), high(uint8)+1,
     high(uint8)+2, high(uint16)-2, high(uint16)-1, high(uint16), high(uint16)+1,
     high(uint16)+2]
@@ -119,7 +119,7 @@ proc testOrdinal3() =
     while true:
       var s = newStringStream()
       var x: uint32
-      for i in vv: 
+      for i in vv:
         s.pack(i)
         s.setPosition(0)
         s.unpack(x)
@@ -132,12 +132,12 @@ proc testOrdinal3() =
       break
 
 proc testOrdinal4() =
-  var uu = [high(int64), low(int32), low(int32)+1, low(int32)+2, high(int32)-1, 
+  var uu = [high(int64), low(int32), low(int32)+1, low(int32)+2, high(int32)-1,
     high(int32)-2, low(int8)-2, low(int8)-1, low(int8), low(int8)+1,
     low(int8)+2, low(int16)-2, low(int16)-1, low(int16), low(int16)+1,
     low(int16)+2, high(int8)-2, high(int8)-1, high(int8), high(int8)+1,
     high(int8)+2, high(int16)-2, high(int16)-1, high(int16), high(int16)+1,
-    high(int16)+2,high(int32), low(int64)+1, low(int64)+2, low(int64), 
+    high(int16)+2,high(int32), low(int64)+1, low(int64)+2, low(int64),
     high(int64)-1, high(int64)-2, low(int64),low(int64)+1,low(int64)+2,
     low(int32)-1,low(int32)-2]
 
@@ -145,7 +145,7 @@ proc testOrdinal4() =
     while true:
       var s = newStringStream()
       var x: int64
-      for i in uu: 
+      for i in uu:
         s.pack(i)
         s.setPosition(0)
         s.unpack(x)
@@ -156,9 +156,9 @@ proc testOrdinal4() =
 
       echo "int64"
       break
-  
-  var vv = [0xFFFFFFFFFFFFFFFFFFFFFF'u64, low(uint32), low(uint32)+1, low(uint32)+2, high(uint32), high(uint32)-1, 
-    high(uint32)-2, low(uint8), low(uint8)+1, low(uint8)+2, low(uint16)+1, 
+
+  var vv = [0xFFFFFFFFFFFFFFFFFFFFFF'u64, low(uint32), low(uint32)+1, low(uint32)+2, high(uint32), high(uint32)-1,
+    high(uint32)-2, low(uint8), low(uint8)+1, low(uint8)+2, low(uint16)+1,
     low(uint16)+2, high(uint8)-2, high(uint8)-1, high(uint8), high(uint8)+1,
     high(uint8)+2, high(uint16)-2, high(uint16)-1, high(uint16), high(uint16)+1,
     high(uint16)+2, 0xFFFFFFFFFFFFFFFFFFFFFF'u64-1, 0xFFFFFFFFFFFFFFFFFFFFFF'u64-2]
@@ -167,7 +167,7 @@ proc testOrdinal4() =
     while true:
       var s = newStringStream()
       var x: uint64
-      for i in vv: 
+      for i in vv:
         s.pack(i)
         s.setPosition(0)
         s.unpack(x)
@@ -185,13 +185,13 @@ proc testString() =
   var f = repeat('b', 3000)
   var g = repeat('c', 70000)
   var s = newStringStream()
-  
+
   var dd,ee,ff,gg: string
   s.pack(d)
   s.pack(e)
   s.pack(f)
   s.pack(g)
-  
+
   s.setPosition(0)
   s.unpack(dd)
   assert dd == d
@@ -205,12 +205,12 @@ proc testString() =
 
 proc testReal() =
   var xx = [-1.0'f32, -2.0, 0.0, Inf, NegInf, 1.0, 2.0]
-  
+
   block escape:
     while true:
       var s = newStringStream()
       var x: float32
-      for i in xx: 
+      for i in xx:
         s.pack(i)
         s.setPosition(0)
         s.unpack(x)
@@ -221,14 +221,14 @@ proc testReal() =
 
       echo "float32"
       break
-  
+
   var vv = [-1.0'f64, -2.0, 0.0, Inf, NegInf, 1.0, 2.0]
-  
+
   block escape:
     while true:
       var s = newStringStream()
       var x: float64
-      for i in vv: 
+      for i in vv:
         s.pack(i)
         s.setPosition(0)
         s.unpack(x)
@@ -244,30 +244,32 @@ proc testSet() =
   type
     side = enum
       ssleft, ssright, sstop, ssbottom
-      
+
   var x,xx:set['a'..'z']
   var y,yy:set[0..10]
-  var z,zz:set[side]
+  var z:set[side]
   var a:int = -10
   var b:uint = 10
   var aa:int
   var bb:uint
-  
+
   x.incl('b')
   x.incl('c')
-  
+
   y.incl(1)
   y.incl(7)
-  
+
   z.incl(ssleft)
   z.incl(sstop)
-  
+  z.incl(ssbottom)
+  z.incl(ssright)
+
   var s = newStringStream()
   s.pack(x)
   s.pack(y)
   s.pack(a)
   s.pack(b)
-  
+
   s.setPosition(0)
   s.unpack(xx)
   s.unpack(yy)
@@ -277,11 +279,9 @@ proc testSet() =
   s.unpack(bb)
   assert a == aa
   assert b == bb
-  
-  echo "set"
-  
 
-    
+  echo "set"
+
 proc testContainer() =
   proc `==`(a,b: IntSet): bool =
     var xx = toSeq(items(a))
@@ -294,49 +294,49 @@ proc testContainer() =
     var xx = toSeq(items(a))
     var yy = toSeq(items(b))
     result = xx == yy
-  
+
   proc `==`(a,b: DoublyLinkedList[Choco]): bool =
     var xx = toSeq(items(a))
     var yy = toSeq(items(b))
     result = xx == yy
-  
+
   proc `==`(a,b: SinglyLinkedRing[Choco]): bool =
     var xx = toSeq(items(a))
     var yy = toSeq(items(b))
     result = xx == yy
-  
+
   proc `==`(a,b: DoublyLinkedRing[Choco]): bool =
     var xx = toSeq(items(a))
     var yy = toSeq(items(b))
     result = xx == yy
-  
+
   proc `==`(a,b: Queue[Choco]): bool =
     var xx = toSeq(items(a))
     var yy = toSeq(items(b))
     result = xx == yy
-  
+
   proc `==`(a,b: HashSet[Choco]): bool =
     var xx = toSeq(items(a))
     var yy = toSeq(items(b))
     result = xx == yy
-  
+
   proc `==`(a,b: OrderedSet[Choco]): bool =
     var xx = toSeq(items(a))
     var yy = toSeq(items(b))
     result = xx == yy
-  
+
   proc `==`(a,b: CritBitTree[void]): bool =
     var xx = toSeq(items(a))
     var yy = toSeq(items(b))
     result = xx == yy
-    
+
   var a = initIntSet()
   a.incl(-2)
   a.incl(-1)
   a.incl(0)
   a.incl(1)
   a.incl(2)
-  
+
   var b = initSinglyLinkedList[Choco]()
   var c = initDoublyLinkedList[Choco]()
   var d = initSinglyLinkedRing[Choco]()
@@ -363,7 +363,7 @@ proc testContainer() =
   h.incl(y)
   k.incl("hello")
   k.incl("world")
-  
+
   var s = newStringStream()
   s.pack(a)
   s.pack(b)
@@ -374,7 +374,7 @@ proc testContainer() =
   s.pack(g)
   s.pack(h)
   s.pack(k)
-  
+
   s.setPosition(0)
   var aa: IntSet
   var bb: SinglyLinkedList[Choco]
@@ -385,7 +385,7 @@ proc testContainer() =
   var gg: HashSet[Choco]
   var hh: OrderedSet[Choco]
   var kk: CritBitTree[void]
-  
+
   s.unpack(aa)
   s.unpack(bb)
   s.unpack(cc)
@@ -395,7 +395,7 @@ proc testContainer() =
   s.unpack(gg)
   s.unpack(hh)
   s.unpack(kk)
-  
+
   assert aa == a
   assert bb == b
   assert cc == c
@@ -405,7 +405,7 @@ proc testContainer() =
   assert gg == g
   assert hh == h
   assert kk == k
-  
+
   echo "container"
 
 proc testMap() =
@@ -416,7 +416,7 @@ proc testMap() =
     for k,v in pairs(a): xx.add((k,v))
     for k,v in pairs(b): yy.add((k,v))
     result = xx == yy
-  
+
   proc `==`(a,b: OrderedTableRef[string, Choco]): bool =
     var xx,yy: seq[tuple[a:string, b:Choco]]
     xx = @[]
@@ -424,7 +424,7 @@ proc testMap() =
     for k,v in pairs(a): xx.add((k,v))
     for k,v in pairs(b): yy.add((k,v))
     result = xx == yy
-  
+
   proc equal(a,b: StringTableRef): bool =
     var xx,yy: seq[tuple[a:string, b:string]]
     xx = @[]
@@ -432,7 +432,7 @@ proc testMap() =
     for k,v in pairs(a): xx.add((k,v))
     for k,v in pairs(b): yy.add((k,v))
     result = xx == yy
-  
+
   proc equal(a,b: CritBitTree[Choco]): bool =
     var xx,yy: seq[tuple[a:string, b:Choco]]
     xx = @[]
@@ -440,7 +440,7 @@ proc testMap() =
     for k,v in pairs(a): xx.add((k,v))
     for k,v in pairs(b): yy.add((k,v))
     result = xx == yy
-    
+
   var s = newStringStream()
   var a = initTable[string, Choco]()
   var b = newTable[string, Choco]()
@@ -448,7 +448,7 @@ proc testMap() =
   var d = newOrderedTable[string, Choco]()
   var e = newStringTable(modeCaseSensitive)
   var f: CritBitTree[Choco]
-  
+
   var x = Choco(a:1,b:2)
   var y = Choco(a:3,b:4)
   a["a"] = x
@@ -463,14 +463,14 @@ proc testMap() =
   e["b"] = "bb"
   f["a"] = x
   f["b"] = y
-    
+
   s.pack(a)
   s.pack(b)
   s.pack(c)
   s.pack(d)
   s.pack(e)
   s.pack(f)
-  
+
   s.setPosition(0)
   var aa: Table[string, Choco]
   var bb: TableRef[string, Choco]
@@ -478,21 +478,21 @@ proc testMap() =
   var dd: OrderedTableRef[string, Choco]
   var ee: StringTableRef
   var ff: CritBitTree[Choco]
-  
+
   s.unpack(aa)
   s.unpack(bb)
   s.unpack(cc)
   s.unpack(dd)
   s.unpack(ee)
   s.unpack(ff)
-  
+
   assert aa == a
   assert bb == b
   assert cc == c
   assert dd == d
   assert ee.equal e
   assert ff.equal f
-  
+
   echo "map"
 
 proc testArray() =
@@ -501,23 +501,23 @@ proc testArray() =
   var b = ["a", "abc", "def"]
   var c = @[0, 1, 2, 3]
   var d = @["a", "abc", "def"]
-  
+
   s.pack(a)
   s.pack(b)
   s.pack(c)
   s.pack(d)
-  
+
   var aa: array[0..3, int]
   var bb: array[0..2, string]
   var cc: seq[int]
   var dd: seq[string]
-  
+
   s.setPosition(0)
   s.unpack(aa)
   s.unpack(bb)
   s.unpack(cc)
   s.unpack(dd)
-  
+
   assert aa == a
   assert bb == b
   assert cc == c
@@ -531,24 +531,24 @@ proc testTuple() =
       abc: int
       def: string
       ghi: float
-          
+
   var s = newStringStream()
   var a: ttt = ("hello", -1, 1, 1.0)
   var b = www(abc:1, def: "hello", ghi: 1.0)
-  
+
   s.pack(a)
   s.pack(b)
-  
+
   s.setPosition(0)
   var aa: ttt
   var bb: www
-  
+
   s.unpack(aa)
   s.unpack(bb)
-  
+
   assert aa == a
   assert bb == b
-  
+
   echo "tuple"
 
 proc otherTest() =
@@ -557,41 +557,42 @@ proc otherTest() =
   var aa: seq[int]
   unpack(buf, aa)
   assert a == aa
-  
+
   type
     functype = object
       fn: proc(x:int)
-  
+
     Horse = object
       legs: int
       speed: int
       color: string
       name: string
-      
+
   var b : functype
   var msg = pack(b)
-  
+  echo msg.stringify
+
   var cc = Horse(legs:4, speed:150, color:"black", name:"stallion")
   var zz = pack(cc)
   echo stringify(zz)
 
-proc refTest() =  
+proc refTest() =
   var refint: ref int
   new(refint)
   refint[] = 45
-  
+
   var s = newStringStream()
   s.pack(refint)
-  
+
   var buf = pack(refint)
   echo stringify(buf)
-  
+
   type
     Ghost = ref object
       body: ref float
       legs: ref int
       hair: ref int64
-  
+
   var g: Ghost
   new(g)
   new(g.body)
@@ -600,39 +601,39 @@ proc refTest() =
 
   buf = pack(g)
   echo buf.stringify()
-  
+
   var h: Ghost
   unpack(buf, h)
   echo "ghost: ", $h.body[]
-  
+
   #type
   #  Ghostly = object
   #    legs: void
   #    body: void
-  #    
+  #
   #var j: Ghostly
   #pack(j)
-  
+
   var rr: ptr Chocolate
   var tt: cstring
-  
+
   discard pack(rr)
   discard pack(tt)
 
-proc testInheritance() =  
+proc testInheritance() =
   type
     KAB = object of RootObj
       aaa: int
       bbb: int
-    
+
     KCD = object of KAB
       ccc: int
       ddd: int
-    
+
     KEF = object of KCD
       eee: int
       fff: int
-      
+
   var kk = KEF()
   echo stringify(pack(kk))
 
@@ -640,7 +641,7 @@ proc testDistinct() =
   type
     ship = distinct string
     boat = distinct int
-  
+
     carrier = object
       one: array[0..5, ship]
       two: seq[boat]
@@ -656,7 +657,7 @@ proc testDistinct() =
       twelve: OrderedTable[boat, ship]
       thirteen: OrderedTableRef[boat, ship]
       fourteen: CritBitTree[ship]
-  
+
   proc hash(c: ship): THash =
     var h: THash = 0
     h = h !& hash(string(c))
@@ -669,7 +670,7 @@ proc testDistinct() =
 
   proc `==`(a,b: ship): bool = string(a) == string(b)
   proc `==`(a,b: boat): bool = int(a) == int(b)
-  
+
   proc initCarrier(): carrier =
     for i in 0..5: result.one[i] = ship($i)
     result.two = @[boat(1), boat(2), boat(3)]
@@ -696,18 +697,18 @@ proc testDistinct() =
     result.thirteen = newOrderedTable[boat, ship]()
     result.thirteen[boat(13)] = ship("thirteen")
     result.fourteen["fourteen"] = ship("fourteen")
-  
+
   var airship: ship = ship("plane")
   var buf  = pack(airship)
   echo stringify buf
   unpack(buf, airship)
-  
+
   var cc = initCarrier()
   buf = pack(cc)
   echo stringify buf
   var dd: carrier
   unpack(buf, dd)
-  
+
 proc test() =
   testOrdinal()
   testOrdinal2()
@@ -724,7 +725,7 @@ proc test() =
   refTest()
   testInheritance()
   testDistinct()
-  
+
   echo "OK"
-  
+
 test()
