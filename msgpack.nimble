@@ -1,6 +1,6 @@
 [Package]
 name          = "msgpack4nim"
-version       = "0.1.0"
+version       = "0.1.2"
 author        = "Andri Lim"
 description   = "MessagePack serializer/deserializer implementation in nim"
 license       = "MIT"
