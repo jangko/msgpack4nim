@@ -500,22 +500,22 @@ proc pack_type*(s: Stream, val: int32) =
 proc pack_type*(s: Stream, val: int64) =
   s.pack_imp_int64(val)
 
-template pack_int_imp_select(s: expr, val: expr) =
-  when sizeof(val) == 1:
+proc pack_int_imp_select[T](s: Stream, val: T) =
+  when sizeof(T) == 1:
     s.pack_imp_int8(int8(val))
-  elif sizeof(val) == 2:
+  elif sizeof(T) == 2:
     s.pack_imp_int16(int16(val))
-  elif sizeof(val) == 4:
+  elif sizeof(T) == 4:
     s.pack_imp_int32(int32(val))
   else:
     s.pack_imp_int64(int64(val))
 
-template pack_uint_imp_select(s: expr, val: expr) =
-  if sizeof(val) == 1:
+proc pack_uint_imp_select[T](s: Stream, val: T) =
+  if sizeof(T) == 1:
     s.pack_imp_uint8(cast[uint8](val))
-  elif sizeof(val) == 2:
+  elif sizeof(T) == 2:
     s.pack_imp_uint16(cast[uint16](val))
-  elif sizeof(val) == 4:
+  elif sizeof(T) == 4:
     s.pack_imp_uint32(cast[uint32](val))
   else:
     s.pack_imp_uint64(cast[uint64](val))
@@ -732,12 +732,12 @@ proc unpack_type*(s: Stream, val: var int32) =
 proc unpack_type*(s: Stream, val: var int64) =
   val = s.unpack_imp_int64()
 
-template unpack_int_imp_select(s: expr, val: expr) =
-  when sizeof(val) == 1:
+proc unpack_int_imp_select[T](s: Stream, val: var T) =
+  when sizeof(T) == 1:
     val = s.unpack_imp_int8()
-  elif sizeof(val) == 2:
+  elif sizeof(T) == 2:
     val = s.unpack_imp_int16()
-  elif sizeof(val) == 4:
+  elif sizeof(T) == 4:
     val = s.unpack_imp_int32()
   else:
     val = int(s.unpack_imp_int64())
