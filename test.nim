@@ -66,7 +66,7 @@ proc testOrdinal2() =
       for i in low(int16)..high(int16):
         s.unpack(x)
         if x != i:
-          echo "miss: ", $x, " vs ", $i
+          echo "miss int16: ", $x, " vs ", $i
           break escape
       echo "int16"
       break
@@ -80,7 +80,7 @@ proc testOrdinal2() =
       for i in low(uint16)..high(uint16):
         s.unpack(x)
         if x != i:
-          echo "miss: ", $x, " vs ", $i
+          echo "miss uint16: ", $x, " vs ", $i
           break escape2
       echo "uint16"
       break
@@ -103,7 +103,7 @@ proc testOrdinal3() =
         s.unpack(x)
         s.setPosition(0)
         if x != i:
-          echo "miss: ", $x, " vs ", $i
+          echo "miss int32: ", $x, " vs ", $i
           break escape
 
       echo "int32"
@@ -125,7 +125,7 @@ proc testOrdinal3() =
         s.unpack(x)
         s.setPosition(0)
         if x != i:
-          echo "miss: ", $x, " vs ", $i
+          echo "miss uint32: ", $x, " vs ", $i
           break escape2
 
       echo "uint32"
@@ -151,7 +151,7 @@ proc testOrdinal4() =
         s.unpack(x)
         s.setPosition(0)
         if x != i:
-          echo "miss: ", $x, " vs ", $i
+          echo "miss int64: ", $x, " vs ", $i
           break escape
 
       echo "int64"
@@ -173,7 +173,7 @@ proc testOrdinal4() =
         s.unpack(x)
         s.setPosition(0)
         if x != i:
-          echo "miss: ", $x, " vs ", $i
+          echo "miss uint64: ", $x, " vs ", $i
           break escape2
 
       echo "uint64"
