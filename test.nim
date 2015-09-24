@@ -735,6 +735,35 @@ proc testObjectVariant() =
   var s = pack(aUnion)
   echo s.stringify
 
+proc testComposite() =
+  type
+    myObj = object
+      a: int
+      b: float
+      c: string
+      
+    myComposite = object
+      o: myObj
+      p: int
+    
+  var x, y: myComposite
+  x.p = 11
+  x.o.a = 1
+  x.o.b = 123.123
+  x.o.c = "hello"
+  var s = x.pack
+  echo s.stringify
+  s.unpack(y)
+  assert y == x
+
+proc testRange() =
+  var x, y: range[0..10]
+  x = 5
+  var s = x.pack
+  echo "RANGE: ", s.stringify
+  s.unpack y
+  assert y == x
+  
 proc test() =
   testOrdinal()
   testOrdinal2()
@@ -752,6 +781,8 @@ proc test() =
   testInheritance()
   testDistinct()
   testObjectVariant()
+  testComposite()
+  testRange()
   
   echo "OK"
 

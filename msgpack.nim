@@ -501,11 +501,11 @@ proc pack_type*(s: Stream, val: int64) =
   s.pack_imp_int64(val)
 
 proc pack_int_imp_select[T](s: Stream, val: T) =
-  when sizeof(T) == 1:
+  when sizeof(val) == 1:
     s.pack_imp_int8(int8(val))
-  elif sizeof(T) == 2:
+  elif sizeof(val) == 2:
     s.pack_imp_int16(int16(val))
-  elif sizeof(T) == 4:
+  elif sizeof(val) == 4:
     s.pack_imp_int32(int32(val))
   else:
     s.pack_imp_int64(int64(val))
@@ -640,12 +640,12 @@ proc pack_type*[T](s: Stream, val: seq[T]) =
   else:
     s.pack_array(val.len)
     for i in 0..val.len-1: s.pack_type undistinct(val[i])
-
-proc pack_type*[T: range](s: Stream, val: T) =
-  pack_int_imp_select(s, val)
-
-proc pack_type*[T: enum](s: Stream, val: T) =
-  pack_int_imp_select(s, val)
+    
+proc pack_type*[T: enum|range](s: Stream, val: T) =
+  when val is range:
+    pack_int_imp_select(s, val.int64)
+  else:
+    pack_int_imp_select(s, val)
 
 proc pack_type*[T: tuple|object](s: Stream, val: T) =
   var len = 0
@@ -990,16 +990,13 @@ proc unpack_type*[T](s: Stream, val: var openarray[T]) =
     s.unpack(x)
     val[i] = x
 
-proc unpack_type*[T: enum](s: Stream, val: var T) =
-  when sizeof(val) == 1:
-    val = T(s.unpack_imp_int8())
-  elif sizeof(val) == 2:
-    val = T(s.unpack_imp_int16())
-  elif sizeof(val) == 4:
-    val = T(s.unpack_imp_int32())
+proc unpack_type*[T: enum|range](s: Stream, val: var T) =
+  when val is range:
+    var tmp = s.unpack_imp_int64
+    val = T(tmp)
   else:
-    val = T(s.unpack_imp_int64())
-
+    unpack_int_imp_select(s, val)
+  
 proc unpack_type*[T: tuple|object](s: Stream, val: var T) =
   when defined(msgpack_obj_to_map):
     let len = s.unpack_map()
