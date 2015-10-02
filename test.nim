@@ -764,6 +764,29 @@ proc testRange() =
   s.unpack y
   assert y == x
   
+proc testAny() =
+  # [1, "hello", {"a": "b"}]
+  var s = newStringStream()
+  s.pack_array(3)
+  s.pack(1)
+  s.pack("hello")
+  var tmpMap = newStringTable(modeCaseSensitive)
+  tmpMap["a"] = "b"
+  s.pack(tmpMap)
+  s.setPosition(0)
+  var a = s.toAny()
+  assert a.msgType == msgArray
+  assert a.arrayVal[0].msgType == msgInt
+  assert a.arrayVal[0].intVal == 1
+  assert a.arrayVal[1].msgType == msgString
+  assert a.arrayVal[1].stringVal == "hello"
+  assert a.arrayVal[2].msgType == msgMap
+  assert a.arrayVal[2].mapVal[0].key.msgType == msgString
+  assert a.arrayVal[2].mapVal[0].key.stringVal == "a"
+  assert a.arrayVal[2].mapVal[0].val.msgType == msgString
+  assert a.arrayVal[2].mapVal[0].val.stringVal == "b"
+  echo "any"
+  
 proc test() =
   testOrdinal()
   testOrdinal2()
@@ -783,6 +806,7 @@ proc test() =
   testObjectVariant()
   testComposite()
   testRange()
+  testAny()
   
   echo "OK"
 

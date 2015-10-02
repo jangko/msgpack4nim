@@ -33,7 +33,7 @@ proc initCustomType(): CustomType =
 var x = initCustomType()
 #you can use another stream compatible
 #class here e.g. FileStream
-var s = newStringStream() 
+var s = newStringStream()
 s.pack(x) #here the magic happened
 
 s.setPosition(0)
@@ -139,7 +139,7 @@ nim c --define:msgpack_obj_to_stream yourfile.nim
 *circular reference*:
 altough detecting circular reference is not too difficult(using set of pointers), the current implementation does not provide circular reference detection. If you pack something contains circular reference, you know something bad will happened
 
-**Restriction**: 
+**Restriction**:
  For objects their type is **not** serialized. This means essentially that it does not work if the object has some other runtime type than its compiletime type:
 
 ```nimrod
@@ -157,7 +157,7 @@ var
 new(b)
 a = b
 
-echo stringify(pack(a)) 
+echo stringify(pack(a))
 #produces "[ ]" or "{ }"
 #not "[ 0 ]" or '{ "f" : 0 }'
 ```
@@ -186,12 +186,12 @@ type
     legs: int
     foals: seq[string]
     attr: Table[string, string]
-    
+
   Cat = object
     legs: uint8
     kittens: HashSet[string]
     traits: StringTableRef
-    
+
 proc initHorse(): Horse =
   result.legs = 4
   result.foals = @["jilly", "colt"]
@@ -203,7 +203,7 @@ var stallion = initHorse()
 var tom: Cat
 
 var buf = pack(stallion) #pack a Horse here
-unpack(buf, tom) 
+unpack(buf, tom)
 #abracadabra, it will unpack into a Cat
 
 echo "legs: ", $tom.legs
@@ -218,15 +218,15 @@ another gotcha:
     KAB = object of RootObj
       aaa: int
       bbb: int
-    
+
     KCD = object of KAB
       ccc: int
       ddd: int
-    
+
     KEF = object of KCD
       eee: int
       fff: int
-      
+
   var kk = KEF()
   echo stringify(pack(kk))
   # will produce "{ "eee" : 0, "fff" : 0, "ccc" : 0, "ddd" : 0, "aaa" : 0, "bbb" : 0 }"
@@ -236,7 +236,7 @@ another gotcha:
 ##bin and ext format
 
 this implementation provide function to encode/decode msgpack bin/ext format header, but for the body, you must write it yourself to the StringStream
-	
+
 * proc pack_bin*(s: Stream, len: int)
 * proc pack_ext*(s: Stream, len: int, exttype: int8)
 * proc unpack_bin*(s: Stream): int
@@ -281,7 +281,7 @@ you can convert msgpack data to readable string using stringify function
       speed: int
       color: string
       name: string
-  
+
   var cc = Horse(legs:4, speed:150, color:"black", name:"stallion")
   var zz = pack(cc)
   echo stringify(zz)
@@ -300,8 +300,29 @@ msgpack_obj_to_stream defined:
 4 150 "black" "stallion"
 ```
 
+##toAny
+**toAny** takes a string of msgpack data or a stream, then it will produce **msgAny** which you can interrogate of it's  type and value during runtime by accessing it's member **msgType**
+
+**toAny** recognize all valid msgpack message and translate it into a group of types:
+
+    msgMap, msgArray, msgString, msgBool,
+    msgBin, msgExt, msgFloat32, msgFloat64,
+    msgInt, msgUint, msgNull
+
+for example, **msg** is a *msgpack* data with content [1, "hello", {"a": "b"}], you can interrogate it like this:
+
+```nimrod
+var a = msg.toAny()
+assert a.msgType == msgArray
+assert a.arrayVal[0].msgType == msgInt
+assert a.arrayVal[0].intVal == 1
+assert a.arrayVal[1].msgType == msgString
+assert a.arrayVal[1].stringVal == "hello"
+assert a.arrayVal[2].msgType == msgMap
+assert a.arrayVal[2].mapVal[0].key.msgType == msgString
+assert a.arrayVal[2].mapVal[0].key.stringVal == "a"
+assert a.arrayVal[2].mapVal[0].val.msgType == msgString
+assert a.arrayVal[2].mapVal[0].val.stringVal == "b"
+```
+
 enjoy it, happy nim-ing
-
-
-
-

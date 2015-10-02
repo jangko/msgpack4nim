@@ -190,7 +190,7 @@ proc pack_imp_uint64(s: Stream, val: uint64) =
       s.write(chr(0xcf))
       s.store64(val)
 
-proc unpack_imp_uint64(s: Stream): uint64 =
+proc unpack_imp_uint64*(s: Stream): uint64 =
   let c = s.readChar
   if c < chr(128): result = take64_8(c)
   elif c == chr(0xcc):
@@ -357,7 +357,7 @@ proc pack_imp_int64(s: Stream, val: int64) =
       s.write(chr(0xcf))
       s.store64(uint64(val))
 
-proc unpack_imp_int64(s: Stream): int64 =
+proc unpack_imp_int64*(s: Stream): int64 =
   let c = s.readChar
   if c >= chr(0xe0) and c <= chr(0xff):
     result = int64(cast[int8](c))
@@ -755,14 +755,14 @@ proc unpack_type*(s: Stream, val: var uint) =
   else:
     val = uint(s.unpack_imp_uint64())
 
-proc unpack_imp_float32(s: Stream): float32 {.inline.} =
+proc unpack_imp_float32*(s: Stream): float32 {.inline.} =
   let c = s.readChar
   if c == chr(0xca):
     result = cast[float32](s.unstore32)
   else:
     raise conversionError("float32")
 
-proc unpack_imp_float64(s: Stream): float64 {.inline.} =
+proc unpack_imp_float64*(s: Stream): float64 {.inline.} =
   let c = s.readChar
   if c == chr(0xcb):
     result = cast[float64](s.unstore64)
@@ -1217,3 +1217,105 @@ proc stringify*(data: string): string =
     stringify(s, zz)
     zz.write(" ")
   result = zz.data
+
+type
+  anyType* = enum
+    msgMap, msgArray, msgString, msgBool, 
+    msgBin, msgExt, msgFloat32, msgFloat64, 
+    msgInt, msgUint, msgNull
+  
+  msgPair* = tuple[key, val: msgAny]
+  
+  msgAny* = ref object of RootObj
+    case msgType*: anyType
+    of msgMap: mapVal*: seq[msgPair]
+    of msgArray: arrayVal*: seq[msgAny]
+    of msgString: stringVal*: string
+    of msgBool: boolVal*: bool
+    of msgBin: 
+      binLen*: int
+      binData*: string
+    of msgExt:
+      extLen*, extType*: int
+      extData*: string
+    of msgFloat32: float32Val*: float32
+    of msgFloat64: float64Val*: float64
+    of msgInt: intVal*: int64
+    of msgUint: uintVal*: uint64
+    of msgNull: nil
+    
+proc newMsgAny(msgType: anyType): msgAny =
+  new(result)
+  result.msgType = msgType
+  
+proc toAny*(s: Stream): msgAny =
+  let pos = s.getPosition()
+  let c = ord(s.readChar)
+  case c
+  of 0x00..0x7f:
+    result = newMsgAny(msgInt)
+    result.intVal = c
+  of 0x80..0x8f, 0xde..0xdf:
+    s.setPosition(pos)
+    let len = s.unpack_map()
+    result = newMsgAny(msgMap)
+    result.mapVal = newSeq[msgPair](len)
+    for i in 0..len-1:
+      result.mapVal[i] = (key: toAny(s), val: toAny(s))
+  of 0x90..0x9f, 0xdc..0xdd:
+    s.setPosition(pos)
+    let len = s.unpack_array()
+    result = newMsgAny(msgArray)
+    result.arrayVal = newSeq[msgAny](len)
+    for i in 0..len-1:
+      result.arrayVal[i] = toAny(s)
+  of 0xa0..0xbf, 0xd9..0xdb:
+    s.setPosition(pos)
+    let len = s.unpack_string()
+    result = newMsgAny(msgString)
+    result.stringVal = s.readStr(len)
+  of 0xc0:
+    result = newMsgAny(msgNull)
+  of 0xc1:
+    raise conversionError("toAny unused")
+  of 0xc2:
+    result = newMsgAny(msgBool)
+    result.boolVal = false
+  of 0xc3:
+    result = newMsgAny(msgBool)
+    result.boolVal = true
+  of 0xc4..0xc6:
+    s.setPosition(pos)
+    result = newMsgAny(msgBin)
+    result.binLen = s.unpack_bin()
+    result.binData = s.readStr(result.binLen)
+  of 0xc7..0xc9, 0xd4..0xd8:
+    s.setPosition(pos)
+    let (exttype, extlen) = s.unpack_ext()
+    result = newMsgAny(msgExt)
+    result.extLen = extlen
+    result.extType = exttype.int
+    result.binData = s.readStr(extlen)
+  of 0xca:
+    s.setPosition(pos)
+    result = newMsgAny(msgFloat32)
+    result.float32Val = s.unpack_imp_float32()
+  of 0xcb:
+    s.setPosition(pos)
+    result = newMsgAny(msgFloat64)
+    result.float64Val = s.unpack_imp_float64()
+  of 0xcc..0xcf:
+    s.setPosition(pos)
+    result = newMsgAny(msgUint)
+    result.uintVal = s.unpack_imp_uint64()
+  of 0xd0..0xd3:
+    s.setPosition(pos)
+    result = newMsgAny(msgInt)
+    result.intVal = s.unpack_imp_int64()
+  of 0xe0..0xff:
+    result = newMsgAny(msgInt)
+    result.intVal = cast[int8](c).int64
+
+proc toAny*(data: string): msgAny =
+  var s = newStringStream(data)
+  result = s.toAny()
