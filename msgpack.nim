@@ -734,11 +734,11 @@ proc unpack_type*(s: Stream, val: var int64) =
 
 proc unpack_int_imp_select[T](s: Stream, val: var T) =
   when sizeof(T) == 1:
-    val = s.unpack_imp_int8()
+    val = T(s.unpack_imp_int8())
   elif sizeof(T) == 2:
-    val = s.unpack_imp_int16()
+    val = T(s.unpack_imp_int16())
   elif sizeof(T) == 4:
-    val = s.unpack_imp_int32()
+    val = T(s.unpack_imp_int32())
   else:
     val = int(s.unpack_imp_int64())
 
@@ -996,24 +996,38 @@ proc unpack_type*[T: enum|range](s: Stream, val: var T) =
     val = T(tmp)
   else:
     unpack_int_imp_select(s, val)
+
+#bug #4 remedy
+#don't know why the above proc cannot capture enum type properly
+#that's why we need a proxy here    
+proc unpack_enum_proxy*[T](s: Stream, val: T): T =
+  result = T(s.unpack_imp_int64)
+
+macro unpack_proxy(n: typed): stmt =
+  if getType(n).kind == nnkEnumTy:
+    result = quote do:
+      `n` = s.unpack_enum_proxy(`n`)
+  else:
+    result = quote do:
+      s.unpack `n`
   
 proc unpack_type*[T: tuple|object](s: Stream, val: var T) =
   when defined(msgpack_obj_to_map):
     let len = s.unpack_map()
     var name: string
     for field, value in fieldPairs(val):
-      s.unpack name
-      s.unpack value
+      unpack_proxy(name)
+      unpack_proxy(value)
   elif defined(msgpack_obj_to_stream):
     for field in fields(val):
-      s.unpack field
+      unpack_proxy(field)
   else:
     #perhaps we need to check number of fields
     #against array's length?
     discard s.unpack_array()
     for field in fields(val):
-      s.unpack field
-
+      unpack_proxy(field)      
+      
 proc unpack_type*[T: ref](s: Stream, val: var T) =
   let pos = s.getPosition()
   if s.readChar == pack_value_nil: return

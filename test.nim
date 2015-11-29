@@ -34,25 +34,25 @@ proc testOrdinal() =
   var aa,bb:bool
   s.unpack(aa)
   s.unpack(bb)
-  assert aa == a
-  assert bb == b
+  doAssert aa == a
+  doAssert bb == b
 
   var cc: char
   var dd: int8
   var ee: uint8
   for i in low(char)..high(char):
     s.unpack(cc)
-    assert cc == i
+    doAssert cc == i
   echo "char"
 
   for i in low(int8)..high(int8):
     s.unpack(dd)
-    assert dd == i
+    doAssert dd == i
   echo "int8"
 
   for i in low(uint8)..high(uint8):
     s.unpack(ee)
-    assert ee == i
+    doAssert ee == i
   echo "uint8"
 
 proc testOrdinal2() =
@@ -194,13 +194,13 @@ proc testString() =
 
   s.setPosition(0)
   s.unpack(dd)
-  assert dd == d
+  doAssert dd == d
   s.unpack(ee)
   s.unpack(ff)
   s.unpack(gg)
-  assert ee == e
-  assert ff == f
-  assert gg == g
+  doAssert ee == e
+  doAssert ff == f
+  doAssert gg == g
   echo "string"
 
 proc testReal() =
@@ -273,12 +273,12 @@ proc testSet() =
   s.setPosition(0)
   s.unpack(xx)
   s.unpack(yy)
-  assert x == xx
-  assert y == yy
+  doAssert x == xx
+  doAssert y == yy
   s.unpack(aa)
   s.unpack(bb)
-  assert a == aa
-  assert b == bb
+  doAssert a == aa
+  doAssert b == bb
 
   echo "set"
 
@@ -396,15 +396,15 @@ proc testContainer() =
   s.unpack(hh)
   s.unpack(kk)
 
-  assert aa == a
-  assert bb == b
-  assert cc == c
-  assert dd == d
-  assert ee == e
-  assert ff == f
-  assert gg == g
-  assert hh == h
-  assert kk == k
+  doAssert aa == a
+  doAssert bb == b
+  doAssert cc == c
+  doAssert dd == d
+  doAssert ee == e
+  doAssert ff == f
+  doAssert gg == g
+  doAssert hh == h
+  doAssert kk == k
 
   echo "container"
 
@@ -486,12 +486,12 @@ proc testMap() =
   s.unpack(ee)
   s.unpack(ff)
 
-  assert aa == a
-  assert bb == b
-  assert cc == c
-  assert dd == d
-  assert ee.equal e
-  assert ff.equal f
+  doAssert aa == a
+  doAssert bb == b
+  doAssert cc == c
+  doAssert dd == d
+  doAssert ee.equal e
+  doAssert ff.equal f
 
   echo "map"
 
@@ -518,10 +518,10 @@ proc testArray() =
   s.unpack(cc)
   s.unpack(dd)
 
-  assert aa == a
-  assert bb == b
-  assert cc == c
-  assert dd == d
+  doAssert aa == a
+  doAssert bb == b
+  doAssert cc == c
+  doAssert dd == d
   echo "array"
 
 proc testTuple() =
@@ -546,8 +546,8 @@ proc testTuple() =
   s.unpack(aa)
   s.unpack(bb)
 
-  assert aa == a
-  assert bb == b
+  doAssert aa == a
+  doAssert bb == b
 
   echo "tuple"
 
@@ -556,7 +556,7 @@ proc otherTest() =
   var buf = pack(a)
   var aa: seq[int]
   unpack(buf, aa)
-  assert a == aa
+  doAssert a == aa
 
   type
     functype = object
@@ -734,6 +734,11 @@ proc testObjectVariant() =
   var aUnion = Node(kind:nkInt, intVal:22)
   var s = pack(aUnion)
   echo s.stringify
+  
+  var b: Node
+  unpack(s, b)
+  doAssert b.kind == aUnion.kind
+  doAssert b.intVal == aUnion.intVal
 
 proc testComposite() =
   type
@@ -754,7 +759,7 @@ proc testComposite() =
   var s = x.pack
   echo s.stringify
   s.unpack(y)
-  assert y == x
+  doAssert y == x
 
 proc testRange() =
   var x, y: range[0..10]
@@ -762,7 +767,7 @@ proc testRange() =
   var s = x.pack
   echo "RANGE: ", s.stringify
   s.unpack y
-  assert y == x
+  doAssert y == x
   
 proc testAny() =
   # [1, "hello", {"a": "b"}]
@@ -775,16 +780,16 @@ proc testAny() =
   s.pack(tmpMap)
   s.setPosition(0)
   var a = s.toAny()
-  assert a.msgType == msgArray
-  assert a.arrayVal[0].msgType == msgInt
-  assert a.arrayVal[0].intVal == 1
-  assert a.arrayVal[1].msgType == msgString
-  assert a.arrayVal[1].stringVal == "hello"
-  assert a.arrayVal[2].msgType == msgMap
-  assert a.arrayVal[2].mapVal[0].key.msgType == msgString
-  assert a.arrayVal[2].mapVal[0].key.stringVal == "a"
-  assert a.arrayVal[2].mapVal[0].val.msgType == msgString
-  assert a.arrayVal[2].mapVal[0].val.stringVal == "b"
+  doAssert a.msgType == msgArray
+  doAssert a.arrayVal[0].msgType == msgInt
+  doAssert a.arrayVal[0].intVal == 1
+  doAssert a.arrayVal[1].msgType == msgString
+  doAssert a.arrayVal[1].stringVal == "hello"
+  doAssert a.arrayVal[2].msgType == msgMap
+  doAssert a.arrayVal[2].mapVal[0].key.msgType == msgString
+  doAssert a.arrayVal[2].mapVal[0].key.stringVal == "a"
+  doAssert a.arrayVal[2].mapVal[0].val.msgType == msgString
+  doAssert a.arrayVal[2].mapVal[0].val.stringVal == "b"
   echo "any"
   
 proc test() =
