@@ -1,4 +1,4 @@
-import streams, unsigned, endians, strutils, sequtils, algorithm, math, hashes
+import streams, endians, strutils, sequtils, algorithm, math, hashes
 import tables, intsets, lists, queues, sets, strtabs, critbits
 import msgpack
 
@@ -11,8 +11,8 @@ type
     a: Choco
     b: int
 
-proc hash*(c: Choco): THash =
-  var h: THash = 0
+proc hash*(c: Choco): Hash =
+  var h: Hash = 0
   h = h !& c.a
   h = h !& c.b
 
@@ -657,13 +657,13 @@ type
     thirteen: OrderedTableRef[boat, ship]
     fourteen: CritBitTree[ship]
 
-proc hash(c: ship): THash =
-  var h: THash = 0
+proc hash(c: ship): Hash =
+  var h: Hash = 0
   h = h !& hash(string(c))
   result = !$ h
 
-proc hash(c: boat): THash =
-  var h: THash = 0
+proc hash(c: boat): Hash =
+  var h: Hash = 0
   h = h !& int(c)
   result = !$ h
   

@@ -23,7 +23,7 @@
 #
 #-------------------------------------
 
-import streams, unsigned, endians, strutils, sequtils, algorithm, math, hashes
+import streams, endians, strutils, sequtils, algorithm, math, hashes
 import tables, intsets, lists, queues, sets, strtabs, critbits, macros
 
 const
@@ -51,19 +51,16 @@ when system.cpuEndian == littleEndian:
   proc take8_64(val: uint64): uint8 {.inline.} = uint8(val and 0xFF)
 
   proc store16(s: Stream, val: uint16) =
-    var tmp = val
     var res: uint16
-    swapEndian16(addr(res), addr(tmp))
+    swapEndian16(addr(res), unsafeAddr(val))
     s.write(res)
   proc store32(s: Stream, val: uint32) =
-    var tmp = val
     var res: uint32
-    swapEndian32(addr(res), addr(tmp))
+    swapEndian32(addr(res), unsafeAddr(val))
     s.write(res)
   proc store64(s: Stream, val: uint64) =
-    var tmp = val
     var res: uint64
-    swapEndian64(addr(res), addr(tmp))
+    swapEndian64(addr(res), unsafeAddr(val))
     s.write(res)
   proc unstore16(s: Stream): uint16 =
     var tmp: uint16 = cast[uint16](s.readInt16)
