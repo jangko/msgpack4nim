@@ -807,7 +807,7 @@ proc unpack_type*(s: Stream, val: var IntSet) =
     x = s.unpack_imp_int32()
     val.incl(x)
 
-template unpack_items_imp(s: expr, val: expr, msg: expr) =
+template unpack_items_imp(s: typed, val: typed, msg: typed) =
   let len = s.unpack_array()
   if len < 0: raise conversionError(msg)
 
@@ -1000,7 +1000,7 @@ proc unpack_type*[T: enum|range](s: Stream, val: var T) =
 proc unpack_enum_proxy*[T](s: Stream, val: T): T =
   result = T(s.unpack_imp_int64)
 
-macro unpack_proxy(n: typed): stmt =
+macro unpack_proxy(n: typed): untyped =
   if getType(n).kind == nnkEnumTy:
     result = quote do:
       `n` = s.unpack_enum_proxy(`n`)

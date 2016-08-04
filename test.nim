@@ -792,6 +792,17 @@ proc testAny() =
   doAssert a.arrayVal[2].mapVal[0].val.stringVal == "b"
   echo "any"
   
+type
+  GUN = enum
+    PISTOL
+    RIFLE
+    MUSKET
+    SMG
+    SHOTGUN
+
+  MilMan = object
+    weapon: GUN
+    
 proc test() =
   testOrdinal()
   testOrdinal2()
@@ -813,6 +824,15 @@ proc test() =
   testRange()
   testAny()
   
+  var a, b: MilMan
+  a.weapon = SMG
+  
+  var buf = pack(a)
+  buf.unpack(b)
+  echo a.weapon
+  echo b.weapon
+  echo buf
+  doAssert(a.weapon == b.weapon)
   echo "OK"
 
 test()
