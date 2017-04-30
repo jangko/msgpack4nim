@@ -127,6 +127,23 @@ or --define:msgpack_obj_to_stream to convert object/tuple fields *value* into st
 nim c --define:msgpack_obj_to_stream yourfile.nim
 ```
 
+What this means? It means by default, every one object/tuple will be converted to one `msgpack array` contains 
+field(s) value only without their field(s) name.
+
+If you specify that the object/tuple will be converted to `msgpack map`, then every one object/tuple will be 
+converted to one `msgpack map` contains key-value pairs. The key will be field name, and the value will be field value.
+
+If you specify that the object/tuple will be converted to msgpack stream, then every one object/tuple will be converted
+into one or more msgpack's type for each object's field and then the resulted stream will be concatenated 
+to the msgpack stream buffer.
+
+Which one should I use?
+
+Usually, other msgpack libraries out there convert object/tuple/record/struct or whatever structured data supported by 
+the language into `msgpack array`, but always make sure to consult the documentation first. 
+If both of the serializer and deserializer agreed to one convention, then usually there will be no problem. 
+No matter which library/language you use, you can exchange msgpack data among them.
+
 #### **ref-types:**
 *ref something* :
 
