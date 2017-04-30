@@ -1,8 +1,8 @@
-#msgpack4nim
+# msgpack4nim
 
 [MessagePack](http://msgpack.org/) implementation written in pure nim
 
-###why another implementation?
+### why another implementation?
 I am fully aware of [another](https://github.com/akiradeveloper/msgpack-nim) msgpack implementation written in nim. But I want something easier to use. Another motivation come from the nim language itself. The current version of nim compiler offer many improvements, including 'generics ' specialization. I found out nim compiler is smart enough to make serialization/deserialization to/from msgpack easy and convenient.
 
 **requirement:** nim ver 0.11.2 or later
@@ -10,7 +10,7 @@ I am fully aware of [another](https://github.com/akiradeveloper/msgpack-nim) msg
 ## Example
 
 ```nimrod
-import msgpack, streams
+import msgpack4nim, streams
 
 type
   #lets try with a rather complex object
@@ -83,7 +83,7 @@ s.setPosition(0)
 s.unpack(x) #unpack as usual
 ```
 
-##Data Conversion
+## Data Conversion
 
 | **nim** | **msgpack** |
 |--------------------------------|----------------|
@@ -113,7 +113,7 @@ s.unpack(x) #unpack as usual
 | CritBitTree[void] | array |
 | object/tuple | array/map |
 
-##object and tuple
+## object and tuple
 
 object and tuple by default converted to msgpack array, however
 you can tell the compiler to convert it to map by supplying --define:msgpack_obj_to_map
@@ -127,7 +127,7 @@ or --define:msgpack_obj_to_stream to convert object/tuple fields *value* into st
 nim c --define:msgpack_obj_to_stream yourfile.nim
 ```
 
-####**ref-types:**
+#### **ref-types:**
 *ref something* :
 
 * if ref value is nil, it will be packed into msgpack nil, and when unpacked, usually will do nothing except seq[T] will be @[]
@@ -143,7 +143,7 @@ altough detecting circular reference is not too difficult(using set of pointers)
  For objects their type is **not** serialized. This means essentially that it does not work if the object has some other runtime type than its compiletime type:
 
 ```nimrod
-import streams, msgpack
+import streams, msgpack4nim
 
 type
   TA = object of RootObj
@@ -161,7 +161,7 @@ echo stringify(pack(a))
 #produces "[ ]" or "{ }"
 #not "[ 0 ]" or '{ "f" : 0 }'
 ```
-####**limitation:**
+#### **limitation:**
 
 these types will be ignored:
 
@@ -179,7 +179,7 @@ however, you can provide your own handler for cstring and pointer
 because data conversion did not preserve original data types, the following code is perfectly valid and will raise no exception
 
 ```nimrod
-import msgpack, streams, tables, sets, strtabs
+import msgpack4nim, streams, tables, sets, strtabs
 
 type
   Horse = object
@@ -233,7 +233,7 @@ another gotcha:
   # not "{ "aaa" : 0, "bbb" : 0, "ccc" : 0, "ddd" : 0, "eee" : 0, "fff" : 0 }"
 ```
 
-##bin and ext format
+## bin and ext format
 
 this implementation provide function to encode/decode msgpack bin/ext format header, but for the body, you must write it yourself to the StringStream
 
@@ -243,7 +243,7 @@ this implementation provide function to encode/decode msgpack bin/ext format hea
 * proc unpack_ext*(s: Stream): tuple[exttype:uint8, len: int]
 
 ```nimrod
-import streams, msgpack
+import streams, msgpack4nim
 
 const exttype0 = 0
 
@@ -270,7 +270,7 @@ var binbody = s.readStr(binlen)
 assert binbody == body
 ```
 
-##stringify
+## stringify
 
 you can convert msgpack data to readable string using stringify function
 
@@ -300,7 +300,7 @@ msgpack_obj_to_stream defined:
 4 150 "black" "stallion"
 ```
 
-##toAny
+## toAny
 **toAny** takes a string of msgpack data or a stream, then it will produce **msgAny** which you can interrogate of it's  type and value during runtime by accessing it's member **msgType**
 
 **toAny** recognize all valid msgpack message and translate it into a group of types:
