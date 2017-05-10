@@ -127,13 +127,13 @@ or --define:msgpack_obj_to_stream to convert object/tuple fields *value* into st
 nim c --define:msgpack_obj_to_stream yourfile.nim
 ```
 
-What this means? It means by default, every one object/tuple will be converted to one `msgpack array` contains 
+What this means? It means by default, each object/tuple will be converted to one `msgpack array` contains 
 field(s) value only without their field(s) name.
 
-If you specify that the object/tuple will be converted to `msgpack map`, then every one object/tuple will be 
+If you specify that the object/tuple will be converted to `msgpack map`, then each object/tuple will be 
 converted to one `msgpack map` contains key-value pairs. The key will be field name, and the value will be field value.
 
-If you specify that the object/tuple will be converted to msgpack stream, then every one object/tuple will be converted
+If you specify that the object/tuple will be converted to msgpack stream, then each object/tuple will be converted
 into one or more msgpack's type for each object's field and then the resulted stream will be concatenated 
 to the msgpack stream buffer.
 
