@@ -1012,9 +1012,11 @@ proc unpack_type*[T: tuple|object](s: Stream, val: var T) =
   when defined(msgpack_obj_to_map):
     let len = s.unpack_map()
     var name: string
-    for field, value in fieldPairs(val):
+    for i in 0..len-1:
       unpack_proxy(name)
-      unpack_proxy(value)
+      for field, value in fieldPairs(val):
+        if field == name:
+          unpack_proxy(value)
   elif defined(msgpack_obj_to_stream):
     for field in fields(val):
       unpack_proxy(field)
