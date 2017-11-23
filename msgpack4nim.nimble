@@ -1,5 +1,5 @@
 # Package
-version       = "0.1.7"
+version       = "0.1.8"
 author        = "Andri Lim"
 description   = "MessagePack serializer/deserializer implementation in nim"
 license       = "MIT"

@@ -46,8 +46,8 @@ macro undistinct(x:typed): untyped =
 
 when system.cpuEndian == littleEndian:
   proc take8_8(val: uint8): uint8 {.inline.} = val
-  proc take8_16(val: uint16): uint8 {.inline.} = val and 0xFF
-  proc take8_32(val: uint32): uint8 {.inline.} = val and 0xFF
+  proc take8_16(val: uint16): uint8 {.inline.} = uint8(val and 0xFF)
+  proc take8_32(val: uint32): uint8 {.inline.} = uint8(val and 0xFF)
   proc take8_64(val: uint64): uint8 {.inline.} = uint8(val and 0xFF)
 
   proc store16(s: Stream, val: uint16) =
@@ -76,7 +76,7 @@ else:
   proc take8_16(val: uint16): uint8 {.inline.} = (val shr 8) and 0xFF
   proc take8_32(val: uint32): uint8 {.inline.} = (val shr 24) and 0xFF
   proc take8_64(val: uint64): uint8 {.inline.} = uint8((val shr 56) and 0xFF)
-  
+
   proc store16(s: Stream, val: uint16) = s.write(val)
   proc store32(s: Stream, val: uint32) = s.write(val)
   proc store64(s: Stream, val: uint64) = s.write(val)
@@ -319,7 +319,7 @@ proc pack_imp_int64(s: Stream, val: int64) =
       #signed 64
       s.write(chr(0xd3))
       s.store64(uint64(val))
-    if val < -(1 shl 15):
+    elif val < -(1 shl 15):
       #signed 32
       s.write(chr(0xd2))
       s.store32(cast[uint32](val))
@@ -465,7 +465,7 @@ proc pack_type*(s: Stream, val: bool) =
   s.pack_bool(val)
 
 proc pack_type*(s: Stream, val: char) =
-  s.pack_imp_uint8(ord(val))
+  s.pack_imp_uint8(uint8(val))
 
 proc pack_type*(s: Stream, val: string) =
   if isNil(val): s.pack_imp_nil()
@@ -621,12 +621,12 @@ proc pack_type*(s: Stream, val: StringTableRef) =
   else:
     s.pack_map_imp(val)
 
-proc pack_type*(s: Stream, val: CritBitTree[void]) =
-  s.pack_array(val.len)
-  for i in items(val): s.pack_type(i)
-
 proc pack_type*[T](s: Stream, val: CritBitTree[T]) =
-  s.pack_map_imp(val)
+  when T is void:
+    s.pack_array(val.len)
+    for i in items(val): s.pack_type(i)
+  else:
+    s.pack_map_imp(val)
 
 proc pack_type*[T](s: Stream, val: openarray[T]) =
   s.pack_array(val.len)
@@ -637,7 +637,7 @@ proc pack_type*[T](s: Stream, val: seq[T]) =
   else:
     s.pack_array(val.len)
     for i in 0..val.len-1: s.pack_type undistinct(val[i])
-    
+
 proc pack_type*[T: enum|range](s: Stream, val: T) =
   when val is range:
     pack_int_imp_select(s, val.int64)
@@ -945,24 +945,24 @@ proc unpack_type*(s: Stream, val: var StringTableRef) =
     s.unpack_type(v)
     val[k] = v
 
-proc unpack_type*(s: Stream, val: var CritBitTree[void]) =
-  let len = s.unpack_array()
-  if len < 0: raise conversionError("critbit tree")
-  var key: string
-  for i in 0..len-1:
-    s.unpack_type(key)
-    val.incl(key)
-
 proc unpack_type*[T](s: Stream, val: var CritBitTree[T]) =
-  let len = s.unpack_map()
-  if len < 0: raise conversionError("critbit tree")
+  when T is void:
+    let len = s.unpack_array()
+    if len < 0: raise conversionError("critbit tree")
+    var key: string
+    for i in 0..len-1:
+      s.unpack_type(key)
+      val.incl(key)
+  else:
+    let len = s.unpack_map()
+    if len < 0: raise conversionError("critbit tree")
 
-  var k: string
-  var v: T
-  for i in 0..len-1:
-    s.unpack(k)
-    s.unpack(v)
-    val[k] = v
+    var k: string
+    var v: T
+    for i in 0..len-1:
+      s.unpack(k)
+      s.unpack(v)
+      val[k] = v
 
 proc unpack_type*[T](s: Stream, val: var seq[T]) =
   let pos = s.getPosition()
@@ -996,7 +996,7 @@ proc unpack_type*[T: enum|range](s: Stream, val: var T) =
 
 #bug #4 remedy
 #don't know why the above proc cannot capture enum type properly
-#that's why we need a proxy here    
+#that's why we need a proxy here
 proc unpack_enum_proxy*[T](s: Stream, val: T): T =
   result = T(s.unpack_imp_int64)
 
@@ -1007,7 +1007,7 @@ macro unpack_proxy(n: typed): untyped =
   else:
     result = quote do:
       s.unpack `n`
-  
+
 proc unpack_type*[T: tuple|object](s: Stream, val: var T) =
   when defined(msgpack_obj_to_map):
     let len = s.unpack_map()
@@ -1025,8 +1025,8 @@ proc unpack_type*[T: tuple|object](s: Stream, val: var T) =
     #against array's length?
     discard s.unpack_array()
     for field in fields(val):
-      unpack_proxy(field)      
-      
+      unpack_proxy(field)
+
 proc unpack_type*[T: ref](s: Stream, val: var T) =
   let pos = s.getPosition()
   if s.readChar == pack_value_nil: return
@@ -1222,6 +1222,8 @@ proc stringify(s: Stream, zz: Stream) =
     zz.write(" }")
   of 0xe0..0xff:
     zz.write($cast[int8](c))
+  else:
+    raise conversionError("unknown command")
 
 proc stringify*(data: string): string =
   var s = newStringStream(data)
@@ -1233,19 +1235,19 @@ proc stringify*(data: string): string =
 
 type
   anyType* = enum
-    msgMap, msgArray, msgString, msgBool, 
-    msgBin, msgExt, msgFloat32, msgFloat64, 
+    msgMap, msgArray, msgString, msgBool,
+    msgBin, msgExt, msgFloat32, msgFloat64,
     msgInt, msgUint, msgNull
-  
+
   msgPair* = tuple[key, val: msgAny]
-  
+
   msgAny* = ref object of RootObj
     case msgType*: anyType
     of msgMap: mapVal*: seq[msgPair]
     of msgArray: arrayVal*: seq[msgAny]
     of msgString: stringVal*: string
     of msgBool: boolVal*: bool
-    of msgBin: 
+    of msgBin:
       binLen*: int
       binData*: string
     of msgExt:
@@ -1256,11 +1258,11 @@ type
     of msgInt: intVal*: int64
     of msgUint: uintVal*: uint64
     of msgNull: nil
-    
+
 proc newMsgAny(msgType: anyType): msgAny =
   new(result)
   result.msgType = msgType
-  
+
 proc toAny*(s: Stream): msgAny =
   let pos = s.getPosition()
   let c = ord(s.readChar)
@@ -1328,6 +1330,8 @@ proc toAny*(s: Stream): msgAny =
   of 0xe0..0xff:
     result = newMsgAny(msgInt)
     result.intVal = cast[int8](c).int64
+  else:
+    raise conversionError("unknown command")
 
 proc toAny*(data: string): msgAny =
   var s = newStringStream(data)

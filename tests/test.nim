@@ -1,6 +1,6 @@
 import streams, endians, strutils, sequtils, algorithm, math, hashes
 import tables, intsets, lists, queues, sets, strtabs, critbits
-import msgpack
+import msgpack4nim
 
 type
   Choco = object
@@ -666,7 +666,7 @@ proc hash(c: boat): Hash =
   var h: Hash = 0
   h = h !& int(c)
   result = !$ h
-  
+
 proc `==`(a,b: ship): bool = string(a) == string(b)
 proc `==`(a,b: boat): bool = int(a) == int(b)
 
@@ -696,7 +696,7 @@ proc initCarrier(): carrier =
   result.thirteen = newOrderedTable[boat, ship]()
   result.thirteen[boat(13)] = ship("thirteen")
   result.fourteen["fourteen"] = ship("fourteen")
-    
+
 proc testDistinct() =
   var airship: ship = ship("plane")
   var buf  = pack(airship)
@@ -718,9 +718,9 @@ proc testObjectVariant() =
       nkAdd, #an addition
       nkSub, #a subtraction
       nkIf #an if statement
-    
+
     Node = ref NodeObj
-    
+
     NodeObj = object
       case kind: NodeKind # the kind field is the discriminator
       of nkInt: intVal: int
@@ -730,11 +730,11 @@ proc testObjectVariant() =
         leftOp, rightOp: Node
       of nkIf:
         condition, thenPart, elsePart: Node
-  
+
   var aUnion = Node(kind:nkInt, intVal:22)
   var s = pack(aUnion)
   echo s.stringify
-  
+
   var b: Node
   unpack(s, b)
   doAssert b.kind == aUnion.kind
@@ -746,11 +746,11 @@ proc testComposite() =
       a: int
       b: float
       c: string
-      
+
     myComposite = object
       o: myObj
       p: int
-    
+
   var x, y: myComposite
   x.p = 11
   x.o.a = 1
@@ -768,7 +768,7 @@ proc testRange() =
   echo "RANGE: ", s.stringify
   s.unpack y
   doAssert y == x
-  
+
 proc testAny() =
   # [1, "hello", {"a": "b"}]
   var s = newStringStream()
@@ -791,7 +791,7 @@ proc testAny() =
   doAssert a.arrayVal[2].mapVal[0].val.msgType == msgString
   doAssert a.arrayVal[2].mapVal[0].val.stringVal == "b"
   echo "any"
-  
+
 type
   GUN = enum
     PISTOL
@@ -802,7 +802,42 @@ type
 
   MilMan = object
     weapon: GUN
-    
+
+proc testWeapon() =
+  var a, b: MilMan
+  a.weapon = SMG
+
+  var buf = pack(a)
+  buf.unpack(b)
+  echo a.weapon
+  echo b.weapon
+  echo buf
+  doAssert(a.weapon == b.weapon)
+
+proc pack_unpack_test[T](val: T) =
+  var vPack = val.pack()
+  var vUnpack: T
+  vpack.unpack(vUnpack)
+  assert val == vUnpack
+
+type
+  abc = object
+    a: int
+    b: int
+
+proc testBug() =
+  var x = abc(a: -557853050, b : 0)
+  var y = abc(a: int(-5578530500), b : 0)
+  pack_unpack_test(x)
+  pack_unpack_test(y)
+
+  pack_unpack_test((-557853050, 0))
+  pack_unpack_test((-5578530500, 0))
+
+  pack_unpack_test((0, -557853050, 0))
+  pack_unpack_test((0, -5578530500, 0))
+  pack_unpack_test((0, -5578530500, 0, 0))
+
 proc test() =
   testOrdinal()
   testOrdinal2()
@@ -823,16 +858,9 @@ proc test() =
   testComposite()
   testRange()
   testAny()
-  
-  var a, b: MilMan
-  a.weapon = SMG
-  
-  var buf = pack(a)
-  buf.unpack(b)
-  echo a.weapon
-  echo b.weapon
-  echo buf
-  doAssert(a.weapon == b.weapon)
+  testWeapon()
+  testBug()
+
   echo "OK"
 
 test()
