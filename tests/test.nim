@@ -315,16 +315,6 @@ proc testContainer() =
     var yy = toSeq(items(b))
     result = xx == yy
 
-  proc `==`(a,b: HashSet[Choco]): bool =
-    var xx = toSeq(items(a))
-    var yy = toSeq(items(b))
-    result = xx == yy
-
-  proc `==`(a,b: OrderedSet[Choco]): bool =
-    var xx = toSeq(items(a))
-    var yy = toSeq(items(b))
-    result = xx == yy
-
   proc `==`(a,b: CritBitTree[void]): bool =
     var xx = toSeq(items(a))
     var yy = toSeq(items(b))
@@ -409,22 +399,6 @@ proc testContainer() =
   echo "container"
 
 proc testMap() =
-  proc `==`(a,b: OrderedTable[string, Choco]): bool =
-    var xx,yy: seq[tuple[a:string, b:Choco]]
-    xx = @[]
-    yy = @[]
-    for k,v in pairs(a): xx.add((k,v))
-    for k,v in pairs(b): yy.add((k,v))
-    result = xx == yy
-
-  proc `==`(a,b: OrderedTableRef[string, Choco]): bool =
-    var xx,yy: seq[tuple[a:string, b:Choco]]
-    xx = @[]
-    yy = @[]
-    for k,v in pairs(a): xx.add((k,v))
-    for k,v in pairs(b): yy.add((k,v))
-    result = xx == yy
-
   proc equal(a,b: StringTableRef): bool =
     var xx,yy: seq[tuple[a:string, b:string]]
     xx = @[]
