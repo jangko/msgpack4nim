@@ -785,7 +785,6 @@ proc testWeapon() =
   buf.unpack(b)
   echo a.weapon
   echo b.weapon
-  echo buf
   doAssert(a.weapon == b.weapon)
 
 proc pack_unpack_test[T](val: T) =
@@ -800,6 +799,7 @@ type
     b: int
 
 proc testBug() =
+  # bug 13
   var x = abc(a: -557853050, b : 0)
   var y = abc(a: int(-5578530500), b : 0)
   pack_unpack_test(x)
@@ -811,6 +811,19 @@ proc testBug() =
   pack_unpack_test((0, -557853050, 0))
   pack_unpack_test((0, -5578530500, 0))
   pack_unpack_test((0, -5578530500, 0, 0))
+
+  # bug 14
+  type
+    NilString = object
+      a: int
+      b: string
+
+  let ns = NilString(a: 10, b: nil)
+  var os: NilString
+  var buf = ns.pack()
+  buf.unpack(os)
+  assert ns == os
+
 
 proc test() =
   testOrdinal()

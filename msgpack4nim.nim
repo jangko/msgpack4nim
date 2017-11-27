@@ -697,7 +697,7 @@ proc unpack_string*(s: Stream): int =
 proc unpack_type*(s: Stream, val: var string) =
   let pos = s.getPosition()
   if s.readChar == pack_value_nil:
-    val = ""
+    val = nil
     return
 
   s.setPosition(pos)
