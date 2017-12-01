@@ -967,7 +967,7 @@ proc unpack_type*[T](s: Stream, val: var CritBitTree[T]) =
 proc unpack_type*[T](s: Stream, val: var seq[T]) =
   let pos = s.getPosition()
   if s.readChar == pack_value_nil:
-    val = @[]
+    val = nil
     return
 
   s.setPosition(pos)

@@ -817,8 +817,9 @@ proc testBug() =
     NilString = object
       a: int
       b: string
+      c: seq[int]
 
-  let ns = NilString(a: 10, b: nil)
+  let ns = NilString(a: 10, b: nil, c: nil)
   var os: NilString
   var buf = ns.pack()
   buf.unpack(os)

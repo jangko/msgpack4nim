@@ -147,7 +147,7 @@ No matter which library/language you use, you can exchange msgpack data among th
 #### **ref-types:**
 *ref something* :
 
-* if ref value is nil, it will be packed into msgpack nil, and when unpacked, usually will do nothing except seq[T] will be @[]
+* if ref value is nil, it will be packed into msgpack nil, and when unpacked, you will get nil too
 * if ref value not nil, it will be dereferenced e.g. pack(val[]) or unpack(val[])
 * ref subject to some restriction. see **restriction** below
 * ptr will be treated like ref during pack
