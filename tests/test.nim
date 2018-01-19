@@ -1,5 +1,5 @@
 import streams, endians, strutils, sequtils, algorithm, math, hashes
-import tables, intsets, lists, queues, sets, strtabs, critbits
+import tables, intsets, lists, deques, sets, strtabs, critbits
 import msgpack4nim
 
 type
@@ -310,7 +310,7 @@ proc testContainer() =
     var yy = toSeq(items(b))
     result = xx == yy
 
-  proc `==`(a,b: Queue[Choco]): bool =
+  proc `==`(a,b: Deque[Choco]): bool =
     var xx = toSeq(items(a))
     var yy = toSeq(items(b))
     result = xx == yy
@@ -331,7 +331,7 @@ proc testContainer() =
   var c = initDoublyLinkedList[Choco]()
   var d = initSinglyLinkedRing[Choco]()
   var e = initDoublyLinkedRing[Choco]()
-  var f = initQueue[Choco]()
+  var f = initDeque[Choco]()
   var g = initSet[Choco]()
   var h = initOrderedSet[Choco]()
   var k : CritBitTree[void]
@@ -345,8 +345,8 @@ proc testContainer() =
   d.prepend(y)
   e.prepend(x)
   e.prepend(y)
-  f.add(x)
-  f.add(y)
+  f.addLast(x)
+  f.addLast(y)
   g.incl(x)
   g.incl(y)
   h.incl(x)
@@ -371,7 +371,7 @@ proc testContainer() =
   var cc: DoublyLinkedList[Choco]
   var dd: SinglyLinkedRing[Choco]
   var ee: DoublyLinkedRing[Choco]
-  var ff: Queue[Choco]
+  var ff: Deque[Choco]
   var gg: HashSet[Choco]
   var hh: OrderedSet[Choco]
   var kk: CritBitTree[void]
@@ -622,7 +622,7 @@ type
     four: DoublyLinkedList[boat]
     five: SinglyLinkedRing[ship]
     six: DoublyLinkedRing[boat]
-    seven: Queue[ship]
+    seven: Deque[ship]
     eight: HashSet[boat]
     nine: OrderedSet[ship]
     ten: Table[ship, boat]
@@ -655,8 +655,8 @@ proc initCarrier(): carrier =
   result.five.prepend(ship("five"))
   result.six = initDoublyLinkedRing[boat]()
   result.six.prepend(boat(66))
-  result.seven = initQueue[ship]()
-  result.seven.add(ship("seven"))
+  result.seven = initDeque[ship]()
+  result.seven.addLast(ship("seven"))
   result.eight = initSet[boat]()
   result.eight.incl(boat(88))
   result.nine = initOrderedSet[ship]()
@@ -767,7 +767,7 @@ proc testAny() =
   echo "any"
 
 type
-  GUN = enum
+  GUN* = enum
     PISTOL
     RIFLE
     MUSKET

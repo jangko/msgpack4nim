@@ -1,6 +1,6 @@
 # MessagePack implementation written in nim
 #
-# Copyright (c) 2015 Andri Lim
+# Copyright (c) 2015-2018 Andri Lim
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -24,7 +24,7 @@
 #-------------------------------------
 
 import streams, endians, strutils, sequtils, algorithm, math, hashes
-import tables, intsets, lists, queues, sets, strtabs, critbits, macros
+import tables, intsets, lists, deques, sets, strtabs, critbits, macros
 
 const
   pack_value_nil = chr(0xc0)
@@ -582,7 +582,7 @@ proc pack_type*[T](s: Stream, val: SinglyLinkedRing[T]) =
 proc pack_type*[T](s: Stream, val: DoublyLinkedRing[T]) =
   s.pack_items_imp(val)
 
-proc pack_type*[T](s: Stream, val: Queue[T]) =
+proc pack_type*[T](s: Stream, val: Deque[T]) =
   s.pack_array(val.len)
   for i in items(val): s.pack_type undistinct(i)
 
@@ -835,15 +835,15 @@ proc unpack_type*[T](s: Stream, val: var DoublyLinkedRing[T]) =
   val = initDoublyLinkedRing[T]()
   s.unpack_items_imp(val, "doubly linked ring")
 
-proc unpack_type*[T](s: Stream, val: var Queue[T]) =
+proc unpack_type*[T](s: Stream, val: var Deque[T]) =
   let len = s.unpack_array()
-  if len < 0: raise conversionError("queue")
+  if len < 0: raise conversionError("Deque")
 
-  val = initQueue[T](math.nextPowerOfTwo(len))
+  val = initDeque[T](math.nextPowerOfTwo(len))
   var x: T
   for i in 0..len-1:
     s.unpack(x)
-    val.add(x)
+    val.addLast(x)
 
 proc unpack_type*[T](s: Stream, val: var HashSet[T]) =
   let len = s.unpack_array()
