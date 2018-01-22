@@ -1,4 +1,4 @@
-import unittest, msgpack4nim, strutils, streams, msgpack2json, json
+import unittest, msgpack4nim, strutils, streams, msgpack2json, json, os
 
 proc parseDigit*(x: char): uint8 =
   if x in Digits: result = uint8(x.ord - '0'.ord)
@@ -66,9 +66,9 @@ test "string":
   check cmp(newJString("OK"), "a24f4b")
 
 test "basic":
-  let n = json.parseFile("basic.json")
+  let n = json.parseFile("tests" & DirSep & "basic.json")
   let msg = fromJsonNode(n)
-  let mp = readFile("basic.mp")
+  let mp = readFile("tests" & DirSep & "basic.mp")
   check mp == msg
 
   var jn = toJsonNode(msg)
