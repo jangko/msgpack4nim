@@ -33,6 +33,7 @@ before_script:
 script:
     - nim specTests
     - nim codecTests
+    - nim jsonTests
 cache:
   directories:
     - nim-devel

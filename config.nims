@@ -10,8 +10,14 @@ task specTests, "Run spec tests":
   --path:"."
   setCommand "c", "tests/test_spec"
 
-task codecTests, "Run codec":
+task codecTests, "Run codec test":
   --r
   --verbosity:0
   --path:"."
   setCommand "c", "tests/test_codec"
+  
+task jsonTests, "Run json test":
+  --r
+  --verbosity:0
+  --path:"."
+  setCommand "c", "tests/test_json"

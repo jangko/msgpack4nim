@@ -1,6 +1,6 @@
 import streams, endians, strutils, sequtils, algorithm, math, hashes
 import tables, intsets, lists, deques, sets, strtabs, critbits
-import msgpack4nim
+import msgpack4nim, unittest
 
 type
   Choco = object
@@ -18,7 +18,7 @@ proc hash*(c: Choco): Hash =
 
   result = !$ h
 
-proc testOrdinal() =
+test "ordinal 8 bit":
   var
     s = newStringStream()
     a = true
@@ -34,58 +34,44 @@ proc testOrdinal() =
   var aa,bb:bool
   s.unpack(aa)
   s.unpack(bb)
-  doAssert aa == a
-  doAssert bb == b
+  check aa == a
+  check bb == b
 
   var cc: char
   var dd: int8
   var ee: uint8
   for i in low(char)..high(char):
     s.unpack(cc)
-    doAssert cc == i
-  echo "char"
+    check cc == i
 
   for i in low(int8)..high(int8):
     s.unpack(dd)
-    doAssert dd == i
-  echo "int8"
+    check dd == i
 
   for i in low(uint8)..high(uint8):
     s.unpack(ee)
-    doAssert ee == i
-  echo "uint8"
+    check ee == i
 
-proc testOrdinal2() =
+test "ordinal 16 bit":
+  block one:
+    var s = newStringStream()
+    for i in low(int16)..high(int16): s.pack(i)
+    s.setPosition(0)
+    var x: int16
+    for i in low(int16)..high(int16):
+      s.unpack(x)
+      check x == i
 
-  block escape:
-    while true:
-      var s = newStringStream()
-      for i in low(int16)..high(int16): s.pack(i)
-      s.setPosition(0)
-      var x: int16
-      for i in low(int16)..high(int16):
-        s.unpack(x)
-        if x != i:
-          echo "miss int16: ", $x, " vs ", $i
-          break escape
-      echo "int16"
-      break
+  block two:
+    var s = newStringStream()
+    for i in low(uint16)..high(uint16): s.pack(i)
+    s.setPosition(0)
+    var x: uint16
+    for i in low(uint16)..high(uint16):
+      s.unpack(x)
+      check x == i
 
-  block escape2:
-    while true:
-      var s = newStringStream()
-      for i in low(uint16)..high(uint16): s.pack(i)
-      s.setPosition(0)
-      var x: uint16
-      for i in low(uint16)..high(uint16):
-        s.unpack(x)
-        if x != i:
-          echo "miss uint16: ", $x, " vs ", $i
-          break escape2
-      echo "uint16"
-      break
-
-proc testOrdinal3() =
+test "ordinal 32 bit":
   var uu = [low(int32), low(int32)+1, low(int32)+2, high(int32)-1,
     high(int32)-2, low(int8)-2, low(int8)-1, low(int8), low(int8)+1,
     low(int8)+2, low(int16)-2, low(int16)-1, low(int16), low(int16)+1,
@@ -93,21 +79,15 @@ proc testOrdinal3() =
     high(int8)+2, high(int16)-2, high(int16)-1, high(int16), high(int16)+1,
     high(int16)+2,high(int32)]
 
-  block escape:
-    while true:
-      var s = newStringStream()
-      var x: int32
-      for i in uu:
-        s.pack(i)
-        s.setPosition(0)
-        s.unpack(x)
-        s.setPosition(0)
-        if x != i:
-          echo "miss int32: ", $x, " vs ", $i
-          break escape
-
-      echo "int32"
-      break
+  block one:
+    var s = newStringStream()
+    var x: int32
+    for i in uu:
+      s.pack(i)
+      s.setPosition(0)
+      s.unpack(x)
+      s.setPosition(0)
+      check x == i
 
   var vv = [low(uint32), low(uint32)+1, low(uint32)+2, high(uint32), high(uint32)-1,
     high(uint32)-2, low(uint8), low(uint8)+1, low(uint8)+2, low(uint16)+1,
@@ -115,23 +95,17 @@ proc testOrdinal3() =
     high(uint8)+2, high(uint16)-2, high(uint16)-1, high(uint16), high(uint16)+1,
     high(uint16)+2]
 
-  block escape2:
-    while true:
-      var s = newStringStream()
-      var x: uint32
-      for i in vv:
-        s.pack(i)
-        s.setPosition(0)
-        s.unpack(x)
-        s.setPosition(0)
-        if x != i:
-          echo "miss uint32: ", $x, " vs ", $i
-          break escape2
+  block two:
+    var s = newStringStream()
+    var x: uint32
+    for i in vv:
+      s.pack(i)
+      s.setPosition(0)
+      s.unpack(x)
+      s.setPosition(0)
+      check x == i
 
-      echo "uint32"
-      break
-
-proc testOrdinal4() =
+test "ordinal 64 bit":
   var uu = [high(int64), low(int32), low(int32)+1, low(int32)+2, high(int32)-1,
     high(int32)-2, low(int8)-2, low(int8)-1, low(int8), low(int8)+1,
     low(int8)+2, low(int16)-2, low(int16)-1, low(int16), low(int16)+1,
@@ -141,21 +115,15 @@ proc testOrdinal4() =
     high(int64)-1, high(int64)-2, low(int64),low(int64)+1,low(int64)+2,
     low(int32)-1,low(int32)-2]
 
-  block escape:
-    while true:
-      var s = newStringStream()
-      var x: int64
-      for i in uu:
-        s.pack(i)
-        s.setPosition(0)
-        s.unpack(x)
-        s.setPosition(0)
-        if x != i:
-          echo "miss int64: ", $x, " vs ", $i
-          break escape
-
-      echo "int64"
-      break
+  block one:
+    var s = newStringStream()
+    var x: int64
+    for i in uu:
+      s.pack(i)
+      s.setPosition(0)
+      s.unpack(x)
+      s.setPosition(0)
+      check x == i
 
   var vv = [0xFFFFFFFFFFFFFFFFFFFFFF'u64, low(uint32), low(uint32)+1, low(uint32)+2, high(uint32), high(uint32)-1,
     high(uint32)-2, low(uint8), low(uint8)+1, low(uint8)+2, low(uint16)+1,
@@ -163,23 +131,17 @@ proc testOrdinal4() =
     high(uint8)+2, high(uint16)-2, high(uint16)-1, high(uint16), high(uint16)+1,
     high(uint16)+2, 0xFFFFFFFFFFFFFFFFFFFFFF'u64-1, 0xFFFFFFFFFFFFFFFFFFFFFF'u64-2]
 
-  block escape2:
-    while true:
-      var s = newStringStream()
-      var x: uint64
-      for i in vv:
-        s.pack(i)
-        s.setPosition(0)
-        s.unpack(x)
-        s.setPosition(0)
-        if x != i:
-          echo "miss uint64: ", $x, " vs ", $i
-          break escape2
+  block two:
+    var s = newStringStream()
+    var x: uint64
+    for i in vv:
+      s.pack(i)
+      s.setPosition(0)
+      s.unpack(x)
+      s.setPosition(0)
+      check x == i
 
-      echo "uint64"
-      break
-
-proc testString() =
+test "string":
   var d = "hello"
   var e = repeat('a', 200)
   var f = repeat('b', 3000)
@@ -194,53 +156,40 @@ proc testString() =
 
   s.setPosition(0)
   s.unpack(dd)
-  doAssert dd == d
+  check dd == d
   s.unpack(ee)
   s.unpack(ff)
   s.unpack(gg)
-  doAssert ee == e
-  doAssert ff == f
-  doAssert gg == g
-  echo "string"
+  check ee == e
+  check ff == f
+  check gg == g
 
-proc testReal() =
+test "float number":
   var xx = [-1.0'f32, -2.0, 0.0, Inf, NegInf, 1.0, 2.0]
 
-  block escape:
-    while true:
-      var s = newStringStream()
-      var x: float32
-      for i in xx:
-        s.pack(i)
-        s.setPosition(0)
-        s.unpack(x)
-        s.setPosition(0)
-        if x != i:
-          echo "miss: ", $x, " vs ", $i
-          break escape
-
-      echo "float32"
-      break
+  block one:
+    var s = newStringStream()
+    var x: float32
+    for i in xx:
+      s.pack(i)
+      s.setPosition(0)
+      s.unpack(x)
+      s.setPosition(0)
+      check x == i
 
   var vv = [-1.0'f64, -2.0, 0.0, Inf, NegInf, 1.0, 2.0]
 
-  block escape:
-    while true:
-      var s = newStringStream()
-      var x: float64
-      for i in vv:
-        s.pack(i)
-        s.setPosition(0)
-        s.unpack(x)
-        s.setPosition(0)
-        if x != i:
-          echo "miss: ", $x, " vs ", $i
-          break escape
+  block two:
+    var s = newStringStream()
+    var x: float64
+    for i in vv:
+      s.pack(i)
+      s.setPosition(0)
+      s.unpack(x)
+      s.setPosition(0)
+      check x == i
 
-      echo "float64"
-      break
-
-proc testSet() =
+test "set":
   type
     side = enum
       ssleft, ssright, sstop, ssbottom
@@ -273,16 +222,14 @@ proc testSet() =
   s.setPosition(0)
   s.unpack(xx)
   s.unpack(yy)
-  doAssert x == xx
-  doAssert y == yy
+  check x == xx
+  check y == yy
   s.unpack(aa)
   s.unpack(bb)
-  doAssert a == aa
-  doAssert b == bb
+  check a == aa
+  check b == bb
 
-  echo "set"
-
-proc testContainer() =
+test "container":
   proc `==`(a,b: IntSet): bool =
     var xx = toSeq(items(a))
     var yy = toSeq(items(b))
@@ -386,19 +333,17 @@ proc testContainer() =
   s.unpack(hh)
   s.unpack(kk)
 
-  doAssert aa == a
-  doAssert bb == b
-  doAssert cc == c
-  doAssert dd == d
-  doAssert ee == e
-  doAssert ff == f
-  doAssert gg == g
-  doAssert hh == h
-  doAssert kk == k
+  check aa == a
+  check bb == b
+  check cc == c
+  check dd == d
+  check ee == e
+  check ff == f
+  check gg == g
+  check hh == h
+  check kk == k
 
-  echo "container"
-
-proc testMap() =
+test "map":
   proc equal(a,b: StringTableRef): bool =
     var xx,yy: seq[tuple[a:string, b:string]]
     xx = @[]
@@ -460,16 +405,14 @@ proc testMap() =
   s.unpack(ee)
   s.unpack(ff)
 
-  doAssert aa == a
-  doAssert bb == b
-  doAssert cc == c
-  doAssert dd == d
-  doAssert ee.equal e
-  doAssert ff.equal f
+  check aa == a
+  check bb == b
+  check cc == c
+  check dd == d
+  check ee.equal e
+  check ff.equal f
 
-  echo "map"
-
-proc testArray() =
+test "array":
   var s = newStringStream()
   var a = [0, 1, 2, 3]
   var b = ["a", "abc", "def"]
@@ -492,13 +435,12 @@ proc testArray() =
   s.unpack(cc)
   s.unpack(dd)
 
-  doAssert aa == a
-  doAssert bb == b
-  doAssert cc == c
-  doAssert dd == d
-  echo "array"
+  check aa == a
+  check bb == b
+  check cc == c
+  check dd == d
 
-proc testTuple() =
+test "tuple":
   type
     ttt = tuple[a:string,b:int,c:int,d:float]
     www = object
@@ -520,17 +462,15 @@ proc testTuple() =
   s.unpack(aa)
   s.unpack(bb)
 
-  doAssert aa == a
-  doAssert bb == b
+  check aa == a
+  check bb == b
 
-  echo "tuple"
-
-proc otherTest() =
+test "other":
   var a = @[1,2,3,4,5,6,7,8,9,0]
   var buf = pack(a)
   var aa: seq[int]
   unpack(buf, aa)
-  doAssert a == aa
+  check a == aa
 
   type
     functype = object
@@ -544,13 +484,13 @@ proc otherTest() =
 
   var b : functype
   var msg = pack(b)
-  echo msg.stringify
+  check msg.stringify == "[ 0 ] "
 
   var cc = Horse(legs:4, speed:150, color:"black", name:"stallion")
   var zz = pack(cc)
-  echo stringify(zz)
+  check stringify(zz) == "[ 4, 150, \"black\", \"stallion\" ] "
 
-proc refTest() =
+test "ref type":
   var refint: ref int
   new(refint)
   refint[] = 45
@@ -559,7 +499,7 @@ proc refTest() =
   s.pack(refint)
 
   var buf = pack(refint)
-  echo stringify(buf)
+  check stringify(buf) == "45 "
 
   type
     Ghost = ref object
@@ -574,19 +514,11 @@ proc refTest() =
   new(g.hair)
 
   buf = pack(g)
-  echo buf.stringify()
+  check buf.stringify() == "[ 0.0, 0, 0 ] "
 
   var h: Ghost
   unpack(buf, h)
-  echo "ghost: ", $h.body[]
-
-  #type
-  #  Ghostly = object
-  #    legs: void
-  #    body: void
-  #
-  #var j: Ghostly
-  #pack(j)
+  check $h.body[] == "0.0"
 
   var rr: ptr Chocolate
   var tt: cstring
@@ -594,7 +526,7 @@ proc refTest() =
   discard pack(rr)
   discard pack(tt)
 
-proc testInheritance() =
+test "inheritance":
   type
     KAB = object of RootObj
       aaa: int
@@ -609,7 +541,7 @@ proc testInheritance() =
       fff: int
 
   var kk = KEF()
-  echo stringify(pack(kk))
+  check stringify(pack(kk)) == "[ 0, 0, 0, 0, 0, 0 ] "
 
 type
   ship = distinct string
@@ -644,6 +576,12 @@ proc hash(c: boat): Hash =
 proc `==`(a,b: ship): bool = string(a) == string(b)
 proc `==`(a,b: boat): bool = int(a) == int(b)
 
+proc `$`(a: ship): string =
+  result = $string(a)
+
+proc `$`(a: boat): string =
+  result = $int(a)
+
 proc initCarrier(): carrier =
   for i in 0..5: result.one[i] = ship($i)
   result.two = @[boat(1), boat(2), boat(3)]
@@ -671,19 +609,34 @@ proc initCarrier(): carrier =
   result.thirteen[boat(13)] = ship("thirteen")
   result.fourteen["fourteen"] = ship("fourteen")
 
-proc testDistinct() =
+test "distinct":
   var airship: ship = ship("plane")
   var buf  = pack(airship)
-  echo stringify buf
+  check stringify(buf) == "\"plane\" "
   unpack(buf, airship)
 
   var cc = initCarrier()
   buf = pack(cc)
-  echo stringify buf
+
   var dd: carrier
   unpack(buf, dd)
 
-proc testObjectVariant() =
+  check cc.one      == dd.one
+  check cc.two      == dd.two
+  check $cc.three    == $dd.three
+  check $cc.four     == $dd.four
+  check $cc.five     == $dd.five
+  check $cc.six      == $dd.six
+  check $cc.seven   == $dd.seven
+  check cc.eight    == dd.eight
+  check cc.nine     == dd.nine
+  check cc.ten      == dd.ten
+  check cc.eleven   == dd.eleven
+  check cc.twelve   == dd.twelve
+  check cc.thirteen == dd.thirteen
+  check $cc.fourteen == $dd.fourteen
+
+test "object variant":
   type
     NodeKind = enum # the different node types
       nkInt, #a leaf with an integer value
@@ -707,14 +660,14 @@ proc testObjectVariant() =
 
   var aUnion = Node(kind:nkInt, intVal:22)
   var s = pack(aUnion)
-  echo s.stringify
+  check s.stringify == "[ 0, 22 ] "
 
   var b: Node
   unpack(s, b)
-  doAssert b.kind == aUnion.kind
-  doAssert b.intVal == aUnion.intVal
+  check b.kind == aUnion.kind
+  check b.intVal == aUnion.intVal
 
-proc testComposite() =
+test "composite":
   type
     myObj = object
       a: int
@@ -731,19 +684,17 @@ proc testComposite() =
   x.o.b = 123.123
   x.o.c = "hello"
   var s = x.pack
-  echo s.stringify
   s.unpack(y)
-  doAssert y == x
+  check y == x
 
-proc testRange() =
+test "range":
   var x, y: range[0..10]
   x = 5
   var s = x.pack
-  echo "RANGE: ", s.stringify
   s.unpack y
-  doAssert y == x
+  check y == x
 
-proc testAny() =
+test "any":
   # [1, "hello", {"a": "b"}]
   var s = newStringStream()
   s.pack_array(3)
@@ -754,17 +705,16 @@ proc testAny() =
   s.pack(tmpMap)
   s.setPosition(0)
   var a = s.toAny()
-  doAssert a.msgType == msgArray
-  doAssert a.arrayVal[0].msgType == msgInt
-  doAssert a.arrayVal[0].intVal == 1
-  doAssert a.arrayVal[1].msgType == msgString
-  doAssert a.arrayVal[1].stringVal == "hello"
-  doAssert a.arrayVal[2].msgType == msgMap
-  doAssert a.arrayVal[2].mapVal[0].key.msgType == msgString
-  doAssert a.arrayVal[2].mapVal[0].key.stringVal == "a"
-  doAssert a.arrayVal[2].mapVal[0].val.msgType == msgString
-  doAssert a.arrayVal[2].mapVal[0].val.stringVal == "b"
-  echo "any"
+  check a.msgType == msgArray
+  check a.arrayVal[0].msgType == msgInt
+  check a.arrayVal[0].intVal == 1
+  check a.arrayVal[1].msgType == msgString
+  check a.arrayVal[1].stringVal == "hello"
+  check a.arrayVal[2].msgType == msgMap
+  check a.arrayVal[2].mapVal[0].key.msgType == msgString
+  check a.arrayVal[2].mapVal[0].key.stringVal == "a"
+  check a.arrayVal[2].mapVal[0].val.msgType == msgString
+  check a.arrayVal[2].mapVal[0].val.stringVal == "b"
 
 type
   GUN* = enum
@@ -777,15 +727,13 @@ type
   MilMan = object
     weapon: GUN
 
-proc testWeapon() =
+test "weapon":
   var a, b: MilMan
   a.weapon = SMG
 
   var buf = pack(a)
   buf.unpack(b)
-  echo a.weapon
-  echo b.weapon
-  doAssert(a.weapon == b.weapon)
+  check(a.weapon == b.weapon)
 
 proc pack_unpack_test[T](val: T) =
   var vPack = val.pack()
@@ -798,7 +746,7 @@ type
     a: int
     b: int
 
-proc testBug() =
+test "bug":
   # bug 13
   var x = abc(a: -557853050, b : 0)
   var y = abc(a: int(-5578530500), b : 0)
@@ -823,32 +771,4 @@ proc testBug() =
   var os: NilString
   var buf = ns.pack()
   buf.unpack(os)
-  assert ns == os
-
-
-proc test() =
-  testOrdinal()
-  testOrdinal2()
-  testOrdinal3()
-  testOrdinal4()
-  testString()
-  testReal()
-  testSet()
-  testContainer()
-  testMap()
-  testArray()
-  testTuple()
-  otherTest()
-  refTest()
-  testInheritance()
-  testDistinct()
-  testObjectVariant()
-  testComposite()
-  testRange()
-  testAny()
-  testWeapon()
-  testBug()
-
-  echo "OK"
-
-test()
+  check ns == os

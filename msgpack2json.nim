@@ -20,7 +20,7 @@ proc toJsonNode*(s: Stream): JsonNode =
     s.setPosition(pos)
     let len = s.unpack_array()
     new(result)
-    result.kind = JObject
+    result.kind = JArray
     result.elems = newSeq[JsonNode](len)
     for i in 0..<len:
       result.elems[i] = toJsonNode(s)
