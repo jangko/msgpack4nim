@@ -87,33 +87,34 @@ s.unpack(x) #unpack as usual
 
 ## Data Conversion
 
-| **nim** | **msgpack** |
+| **nim** | **msgpack** | **JsonNode** |
 |--------------------------------|----------------|
-| int8/16/32/64 | int8/16/32/64 |
-| uint8/16/32/64 | uint8/16/32/64 |
-| true/false/nil | true/false/nil |
-| procedural type | ignored |
-| cstring | ignored |
-| pointer | ignored |
-| ptr | [see ref-types](#ref-types) |
-| ref | [see ref-types](#ref-types) |
-| circular ref | [see ref-types](#ref-types) |
-| distinct types | converted to base type |
-| float32/64 | float32/64 |
-| string | string8/16/32 |
-| array/seq | array |
-| set | array |
-| range/subrange | int8/16/32/64 |
-| enum | int8/16/32/64 |
-| IntSet,Doubly/SinglyLinkedList | array |
-| Doubly/SinglyLinkedRing | array |
-| Queue,HashSet,OrderedSet | array |
-| Table,TableRef | map |
-| OrderedTable,OrderedTableRef | map |
-| StringTableRef | map |
-| CritBitTree[T] | map |
-| CritBitTree[void] | array |
-| object/tuple | array/map |
+| int8/16/32/64 | int8/16/32/64 | JInt |
+| uint8/16/32/64 | uint8/16/32/64 | JInt |
+| true/false | true/false | JBool |
+| nil | nil | JNull |
+| procedural type | ignored | n/a |
+| cstring | ignored | n/a |
+| pointer | ignored | n/a |
+| ptr | [see ref-types](#ref-types) | n/a |
+| ref | [see ref-types](#ref-types) | n/a |
+| circular ref | [see ref-types](#ref-types) | n/a |
+| distinct types | converted to base type | applicable base type |
+| float32/64 | float32/64 | JFloat |
+| string | string8/16/32 | JString |
+| array/seq | array | JArray |
+| set | array | JArray |
+| range/subrange | int8/16/32/64 | JInt |
+| enum | int8/16/32/64 | Jint |
+| IntSet,Doubly/SinglyLinkedList | array | JArray |
+| Doubly/SinglyLinkedRing | array | JArray |
+| Queue,HashSet,OrderedSet | array | JArray |
+| Table,TableRef | map | JObject |
+| OrderedTable,OrderedTableRef | map | JObject |
+| StringTableRef | map | JObject |
+| CritBitTree[T] | map | JObject |
+| CritBitTree[void] | array | JArray |
+| object/tuple | array/map | JObject |
 
 ## object and tuple
 
