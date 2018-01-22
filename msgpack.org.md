@@ -7,6 +7,8 @@ I am fully aware of [another](https://github.com/akiradeveloper/msgpack-nim) msg
 
 **requirement:** nim ver 0.11.2 or later
 
+[![Build Status][badge-msgpack4nim-travisci]][msgpack4nim-travisci]
+
 ## Example
 
 ```nimrod
@@ -343,3 +345,6 @@ assert a.arrayVal[2].mapVal[0].val.stringVal == "b"
 ```
 
 enjoy it, happy nim-ing
+
+[msgpack4nim-travisci]: https://travis-ci.org/jangko/msgpack4nim
+[badge-msgpack4nim-travisci]: https://travis-ci.org/jangko/msgpack4nim.svg?branch=master

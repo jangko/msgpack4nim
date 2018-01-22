@@ -29,7 +29,7 @@ import tables, intsets, lists, deques, sets, strtabs, critbits, macros
 const
   pack_value_nil = chr(0xc0)
 
-proc conversionError(msg: string): ref ObjectConversionError =
+proc conversionError*(msg: string): ref ObjectConversionError =
   new(result)
   result.msg = msg
 
@@ -409,7 +409,7 @@ proc pack_bin*(s: Stream, len: int) =
   if len <= 0xFF:
     s.write(chr(0xc4))
     s.write(uint8(len))
-  elif len > 0x0F and len <= 0xFFFF:
+  elif len > 0xFF and len <= 0xFFFF:
     s.write(chr(0xc5))
     s.store16(uint16(len))
   elif len > 0xFFFF:
@@ -1234,17 +1234,17 @@ proc stringify*(data: string): string =
   result = zz.data
 
 type
-  anyType* = enum
+  AnyType* = enum
     msgMap, msgArray, msgString, msgBool,
     msgBin, msgExt, msgFloat32, msgFloat64,
     msgInt, msgUint, msgNull
 
-  msgPair* = tuple[key, val: msgAny]
+  MsgPair* = tuple[key, val: MsgAny]
 
-  msgAny* = ref object of RootObj
-    case msgType*: anyType
-    of msgMap: mapVal*: seq[msgPair]
-    of msgArray: arrayVal*: seq[msgAny]
+  MsgAny* = ref object of RootObj
+    case msgType*: AnyType
+    of msgMap: mapVal*: seq[MsgPair]
+    of msgArray: arrayVal*: seq[MsgAny]
     of msgString: stringVal*: string
     of msgBool: boolVal*: bool
     of msgBin:
@@ -1259,11 +1259,11 @@ type
     of msgUint: uintVal*: uint64
     of msgNull: nil
 
-proc newMsgAny(msgType: anyType): msgAny =
+proc newMsgAny(msgType: AnyType): MsgAny =
   new(result)
   result.msgType = msgType
 
-proc toAny*(s: Stream): msgAny =
+proc toAny*(s: Stream): MsgAny =
   let pos = s.getPosition()
   let c = ord(s.readChar)
   case c
@@ -1274,14 +1274,14 @@ proc toAny*(s: Stream): msgAny =
     s.setPosition(pos)
     let len = s.unpack_map()
     result = newMsgAny(msgMap)
-    result.mapVal = newSeq[msgPair](len)
+    result.mapVal = newSeq[MsgPair](len)
     for i in 0..len-1:
       result.mapVal[i] = (key: toAny(s), val: toAny(s))
   of 0x90..0x9f, 0xdc..0xdd:
     s.setPosition(pos)
     let len = s.unpack_array()
     result = newMsgAny(msgArray)
-    result.arrayVal = newSeq[msgAny](len)
+    result.arrayVal = newSeq[MsgAny](len)
     for i in 0..len-1:
       result.arrayVal[i] = toAny(s)
   of 0xa0..0xbf, 0xd9..0xdb:
@@ -1333,6 +1333,6 @@ proc toAny*(s: Stream): msgAny =
   else:
     raise conversionError("unknown command")
 
-proc toAny*(data: string): msgAny =
+proc toAny*(data: string): MsgAny =
   var s = newStringStream(data)
   result = s.toAny()
