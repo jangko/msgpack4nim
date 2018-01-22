@@ -88,7 +88,7 @@ s.unpack(x) #unpack as usual
 ## Data Conversion
 
 | **nim** | **msgpack** | **JsonNode** |
-|--------------------------------|----------------|
+|--------------------------------|----------------|----------------|
 | int8/16/32/64 | int8/16/32/64 | JInt |
 | uint8/16/32/64 | uint8/16/32/64 | JInt |
 | true/false | true/false | JBool |
