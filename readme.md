@@ -202,7 +202,8 @@ these types cannot be automatically pack/unpacked:
 however, you can provide your own handler for cstring and pointer
 
 **Gotchas:**
-because data conversion did not preserve original data types, the following code is perfectly valid and will raise no exception
+because data conversion did not preserve original data types(only partial preservation),
+the following code is perfectly valid and will raise no exception
 
 ```nimrod
 import msgpack4nim, streams, tables, sets, strtabs
@@ -261,7 +262,8 @@ another gotcha:
 
 ## bin and ext format
 
-this implementation provide function to encode/decode msgpack bin/ext format header, but for the body, you must write it yourself to the StringStream
+this implementation provide function to encode/decode msgpack bin/ext format header,
+but for the body, you must write it yourself or read it yourself to/from the StringStream
 
 * proc pack_bin*(s: Stream, len: int)
 * proc pack_ext*(s: Stream, len: int, exttype: int8)
@@ -372,7 +374,7 @@ However, if msgpack4nim received encoded streams from other msgpack library cont
 it conforms to the spec, msgpack4nim will happily decoded it and convert it to the destination storage(variable) type.
 
 Other msgpack library who consume msgpack4nim stream, will also decode it properly, although they might not produce smallest number
-of byted required, such situation is common in dynamically typed language msgpack library.
+of bytes required, such situation is common in dynamically typed language msgpack library.
 
 enjoy it, happy nim-ing
 
