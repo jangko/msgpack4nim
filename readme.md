@@ -3,7 +3,10 @@
 [MessagePack](http://msgpack.org/) implementation written in pure nim
 
 ### why another implementation?
-I am fully aware of [another](https://github.com/akiradeveloper/msgpack-nim) msgpack implementation written in nim. But I want something easier to use. Another motivation come from the nim language itself. The current version of nim compiler offer many improvements, including 'generics ' specialization. I found out nim compiler is smart enough to make serialization/deserialization to/from msgpack easy and convenient.
+I am fully aware of [another](https://github.com/akiradeveloper/msgpack-nim) msgpack implementation written in nim.
+But I want something easier to use. Another motivation come from the nim language itself.
+The current version of nim compiler offer many improvements, including 'generics ' specialization.
+I found out nim compiler is smart enough to make serialization/deserialization to/from msgpack easy and convenient.
 
 **requirement:** nim ver 0.11.2 or later
 
@@ -105,7 +108,7 @@ s.unpack(x) #unpack as usual
 | array/seq | array | JArray |
 | set | array | JArray |
 | range/subrange | int8/16/32/64 | JInt |
-| enum | int8/16/32/64 | Jint |
+| enum | int8/16/32/64 | JInt |
 | IntSet,Doubly/SinglyLinkedList | array | JArray |
 | Doubly/SinglyLinkedRing | array | JArray |
 | Queue,HashSet,OrderedSet | array | JArray |
@@ -157,10 +160,13 @@ No matter which library/language you use, you can exchange msgpack data among th
 * unpacking ptr will invoke alloc, so you must dealloc it
 
 *circular reference*:
-altough detecting circular reference is not too difficult(using set of pointers), the current implementation does not provide circular reference detection. If you pack something contains circular reference, you know something bad will happened
+altough detecting circular reference is not too difficult(using set of pointers),
+the current implementation does not provide circular reference detection.
+If you pack something contains circular reference, you know something bad will happened
 
 **Restriction**:
- For objects their type is **not** serialized. This means essentially that it does not work if the object has some other runtime type than its compiletime type:
+For objects their type is **not** serialized.
+This means essentially that it does not work if the object has some other runtime type than its compiletime type:
 
 ```nimrod
 import streams, msgpack4nim
@@ -321,7 +327,8 @@ msgpack_obj_to_stream defined:
 ```
 
 ## toAny
-**toAny** takes a string of msgpack data or a stream, then it will produce **msgAny** which you can interrogate of it's  type and value during runtime by accessing it's member **msgType**
+**toAny** takes a string of msgpack data or a stream, then it will produce **msgAny**
+which you can interrogate of it's  type and value during runtime by accessing it's member **msgType**
 
 **toAny** recognize all valid msgpack message and translate it into a group of types:
 
@@ -344,6 +351,28 @@ assert a.arrayVal[2].mapVal[0].key.stringVal == "a"
 assert a.arrayVal[2].mapVal[0].val.msgType == msgString
 assert a.arrayVal[2].mapVal[0].val.stringVal == "b"
 ```
+
+## JSON
+
+Start version 0.2.0, msgpack4nim receive additional family, msgpack2json module.
+It consists of `toJsonNode` and `fromJsonNode` to interact with stdlib's json module.
+
+## Implementation specific
+
+> If an object can be represented in multiple possible output formats,
+> serializers SHOULD use the format which represents the data in the smallest number of bytes.
+
+According to the spec, the serializer should use smallest number of bytes, and this behavior
+is implemented in msgpack4nim. Therefore, some valid encoding would never produced by msgpack4nim.
+
+For example: although 0xcdff00 and 0xceff000000 encoding is valid according to the spec which is decoded into positive integer 255,
+msgpack4nim never produce it, because the internal algorithm will select the smallest number of bytes needed, which is 0xccff.
+
+However, if msgpack4nim received encoded streams from other msgpack library contains those longer than needed sequence, as long as
+it conforms to the spec, msgpack4nim will happily decoded it and convert it to the destination storage(variable) type.
+
+Other msgpack library who consume msgpack4nim stream, will also decode it properly, although they might not produce smallest number
+of byted required, such situation is common in dynamically typed language msgpack library.
 
 enjoy it, happy nim-ing
 
