@@ -21,3 +21,9 @@ task jsonTests, "Run json test":
   --verbosity:0
   --path:"."
   setCommand "c", "tests/test_json"
+
+task anyTests, "Run any test":
+  --r
+  --verbosity:0
+  --path:"."
+  setCommand "c", "tests/test_any"

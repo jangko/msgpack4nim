@@ -77,7 +77,7 @@ proc toJsonNode*(data: string): JsonNode =
 proc fromJsonNode*(s: Stream, n: JsonNode) =
   case n.kind
   of JNull:
-    s.write(chr(0xc0))
+    s.write(pack_value_nil)
   of JBool:
     s.pack_type(n.getBool())
   of JInt:

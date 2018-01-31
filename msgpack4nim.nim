@@ -26,8 +26,7 @@
 import streams, endians, strutils, sequtils, algorithm, math, hashes
 import tables, intsets, lists, deques, sets, strtabs, critbits, macros
 
-const
-  pack_value_nil = chr(0xc0)
+const pack_value_nil* = chr(0xc0)
 
 proc conversionError*(msg: string): ref ObjectConversionError =
   new(result)
@@ -1232,107 +1231,3 @@ proc stringify*(data: string): string =
     stringify(s, zz)
     zz.write(" ")
   result = zz.data
-
-type
-  AnyType* = enum
-    msgMap, msgArray, msgString, msgBool,
-    msgBin, msgExt, msgFloat32, msgFloat64,
-    msgInt, msgUint, msgNull
-
-  MsgPair* = tuple[key, val: MsgAny]
-
-  MsgAny* = ref object of RootObj
-    case msgType*: AnyType
-    of msgMap: mapVal*: seq[MsgPair]
-    of msgArray: arrayVal*: seq[MsgAny]
-    of msgString: stringVal*: string
-    of msgBool: boolVal*: bool
-    of msgBin:
-      binLen*: int
-      binData*: string
-    of msgExt:
-      extLen*, extType*: int
-      extData*: string
-    of msgFloat32: float32Val*: float32
-    of msgFloat64: float64Val*: float64
-    of msgInt: intVal*: int64
-    of msgUint: uintVal*: uint64
-    of msgNull: nil
-
-proc newMsgAny(msgType: AnyType): MsgAny =
-  new(result)
-  result.msgType = msgType
-
-proc toAny*(s: Stream): MsgAny =
-  let pos = s.getPosition()
-  let c = ord(s.readChar)
-  case c
-  of 0x00..0x7f:
-    result = newMsgAny(msgInt)
-    result.intVal = c
-  of 0x80..0x8f, 0xde..0xdf:
-    s.setPosition(pos)
-    let len = s.unpack_map()
-    result = newMsgAny(msgMap)
-    result.mapVal = newSeq[MsgPair](len)
-    for i in 0..len-1:
-      result.mapVal[i] = (key: toAny(s), val: toAny(s))
-  of 0x90..0x9f, 0xdc..0xdd:
-    s.setPosition(pos)
-    let len = s.unpack_array()
-    result = newMsgAny(msgArray)
-    result.arrayVal = newSeq[MsgAny](len)
-    for i in 0..len-1:
-      result.arrayVal[i] = toAny(s)
-  of 0xa0..0xbf, 0xd9..0xdb:
-    s.setPosition(pos)
-    let len = s.unpack_string()
-    result = newMsgAny(msgString)
-    result.stringVal = s.readStr(len)
-  of 0xc0:
-    result = newMsgAny(msgNull)
-  of 0xc1:
-    raise conversionError("toAny unused")
-  of 0xc2:
-    result = newMsgAny(msgBool)
-    result.boolVal = false
-  of 0xc3:
-    result = newMsgAny(msgBool)
-    result.boolVal = true
-  of 0xc4..0xc6:
-    s.setPosition(pos)
-    result = newMsgAny(msgBin)
-    result.binLen = s.unpack_bin()
-    result.binData = s.readStr(result.binLen)
-  of 0xc7..0xc9, 0xd4..0xd8:
-    s.setPosition(pos)
-    let (exttype, extlen) = s.unpack_ext()
-    result = newMsgAny(msgExt)
-    result.extLen = extlen
-    result.extType = exttype.int
-    result.binData = s.readStr(extlen)
-  of 0xca:
-    s.setPosition(pos)
-    result = newMsgAny(msgFloat32)
-    result.float32Val = s.unpack_imp_float32()
-  of 0xcb:
-    s.setPosition(pos)
-    result = newMsgAny(msgFloat64)
-    result.float64Val = s.unpack_imp_float64()
-  of 0xcc..0xcf:
-    s.setPosition(pos)
-    result = newMsgAny(msgUint)
-    result.uintVal = s.unpack_imp_uint64()
-  of 0xd0..0xd3:
-    s.setPosition(pos)
-    result = newMsgAny(msgInt)
-    result.intVal = s.unpack_imp_int64()
-  of 0xe0..0xff:
-    result = newMsgAny(msgInt)
-    result.intVal = cast[int8](c).int64
-  else:
-    raise conversionError("unknown command")
-
-proc toAny*(data: string): MsgAny =
-  var s = newStringStream(data)
-  result = s.toAny()

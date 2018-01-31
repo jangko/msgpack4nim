@@ -694,28 +694,6 @@ test "range":
   s.unpack y
   check y == x
 
-test "any":
-  # [1, "hello", {"a": "b"}]
-  var s = newStringStream()
-  s.pack_array(3)
-  s.pack(1)
-  s.pack("hello")
-  var tmpMap = newStringTable(modeCaseSensitive)
-  tmpMap["a"] = "b"
-  s.pack(tmpMap)
-  s.setPosition(0)
-  var a = s.toAny()
-  check a.msgType == msgArray
-  check a.arrayVal[0].msgType == msgInt
-  check a.arrayVal[0].intVal == 1
-  check a.arrayVal[1].msgType == msgString
-  check a.arrayVal[1].stringVal == "hello"
-  check a.arrayVal[2].msgType == msgMap
-  check a.arrayVal[2].mapVal[0].key.msgType == msgString
-  check a.arrayVal[2].mapVal[0].key.stringVal == "a"
-  check a.arrayVal[2].mapVal[0].val.msgType == msgString
-  check a.arrayVal[2].mapVal[0].val.stringVal == "b"
-
 type
   GUN* = enum
     PISTOL
@@ -734,6 +712,32 @@ test "weapon":
   var buf = pack(a)
   buf.unpack(b)
   check(a.weapon == b.weapon)
+
+test "bin/ext":
+  const exttype0 = 0
+
+  var s = newStringStream()
+  var body = "this is the body"
+
+  s.pack_ext(body.len, exttype0)
+  s.write(body)
+
+  #the same goes to bin format
+  s.pack_bin(body.len)
+  s.write(body)
+
+  s.setPosition(0)
+  #unpack_ext return tuple[exttype:uint8, len: int]
+  let (extype, extlen) = s.unpack_ext()
+  var extbody = s.readStr(extlen)
+
+  check extbody == body
+  check extype == exttype0
+
+  let binlen = s.unpack_bin()
+  var binbody = s.readStr(binlen)
+
+  check binbody == body
 
 proc pack_unpack_test[T](val: T) =
   var vPack = val.pack()

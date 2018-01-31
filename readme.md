@@ -342,21 +342,19 @@ for example, **msg** is a *msgpack* data with content [1, "hello", {"a": "b"}], 
 
 ```nimrod
 var a = msg.toAny()
-assert a.msgType == msgArray
-assert a.arrayVal[0].msgType == msgInt
+assert a.kind == msgArray
+assert a.arrayVal[0].kind == msgInt
 assert a.arrayVal[0].intVal == 1
-assert a.arrayVal[1].msgType == msgString
+assert a.arrayVal[1].kind == msgString
 assert a.arrayVal[1].stringVal == "hello"
-assert a.arrayVal[2].msgType == msgMap
-assert a.arrayVal[2].mapVal[0].key.msgType == msgString
-assert a.arrayVal[2].mapVal[0].key.stringVal == "a"
-assert a.arrayVal[2].mapVal[0].val.msgType == msgString
-assert a.arrayVal[2].mapVal[0].val.stringVal == "b"
+assert a.arrayVal[2].kind == msgMap
+var c = a[2]
+assert c[anyString("a")] == anyString("b")
 ```
 
 ## JSON
 
-Start version 0.2.0, msgpack4nim receive additional family, msgpack2json module.
+Start version 0.2.0, msgpack4nim receive additional family member, msgpack2json module.
 It consists of `toJsonNode` and `fromJsonNode` to interact with stdlib's json module.
 
 ## Implementation specific

@@ -34,6 +34,7 @@ script:
     - nim specTests
     - nim codecTests
     - nim jsonTests
+    - nim anyTests
 cache:
   directories:
     - nim-devel
