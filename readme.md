@@ -352,9 +352,12 @@ var c = a[2]
 assert c[anyString("a")] == anyString("b")
 ```
 
+since version 0.2.1, toAny was put into separate module `msgpack2any`,
+it has functionality similar with json, with support of msgpack bin and ext natively
+
 ## JSON
 
-Start version 0.2.0, msgpack4nim receive additional family member, msgpack2json module.
+Start version 0.2.0, msgpack4nim receive additional family member, `msgpack2json` module.
 It consists of `toJsonNode` and `fromJsonNode` to interact with stdlib's json module.
 
 ## Implementation specific
