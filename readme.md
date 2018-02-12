@@ -75,11 +75,11 @@ proc pack_type*(s: Stream, x: mycomplexobject) =
   s.pack(x.b) # let the compiler decide
 
 #help the compiler to decide
-proc unpack_type*(s: Stream, x: var complexobject) =
+proc unpack_type*(s: Stream, x: var mycomplexobject) =
   s.unpack(x.a)
   s.unpack(x.b)
 
-var s: newStringStream()
+var s = newStringStream()
 var x: mycomplexobject
 
 s.pack(x) #pack as usual
