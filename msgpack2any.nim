@@ -206,13 +206,12 @@ proc hasKey*(node: MsgAny, key: MsgAny): bool =
   assert(node.kind == msgMap)
   result = node.mapVal.hasKey(key)
 
-proc contains*(node: MsgAny, key: MsgAny): bool =
-  assert(node.kind == msgMap)
-  node.mapVal.hasKey(key)
-
 proc contains*(node: MsgAny, val: MsgAny): bool =
-  assert(node.kind == msgArray)
-  find(node.arrayVal, val) >= 0
+  assert(node.kind in {msgMap, msgArray})
+  if node.kind == msgMap:
+    result = node.mapVal.hasKey(val)
+  else:
+    result = find(node.arrayVal, val) >= 0
 
 proc `[]=`*(obj: MsgAny, key: MsgAny, val: MsgAny) {.inline.} =
   assert(obj.kind == msgMap)
@@ -255,7 +254,7 @@ proc copy*(n: MsgAny): MsgAny =
   of msgMap:
     result = anyMap(n.mapVal.len)
     for k, v in n:
-      result[k] = v
+      result[k.copy] = v.copy
 
 proc toAny*(s: Stream): MsgAny =
   let pos = s.getPosition()

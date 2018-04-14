@@ -225,3 +225,17 @@ test "float number":
   for i in vv:
     let x = s.toAny()
     check x.float64Val == i.float64
+
+test "map copy and `in` operator":
+  var a = anyMap()
+  a[anyString("abc")] = anyInt(123)
+  var b = a.copy
+  a[anyString("abc")] = anyString("hello")
+  check a[anyString("abc")] == anyString("hello")
+  check b[anyString("abc")] == anyInt(123)
+
+  # `in` operator
+  check anyString("abc") in a
+  check anyString("abc") in b
+  var c = anyArray(anyString("apple"))
+  check anyString("apple") in c
