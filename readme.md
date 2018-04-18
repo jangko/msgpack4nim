@@ -8,7 +8,7 @@ But I want something easier to use. Another motivation come from the nim languag
 The current version of nim compiler offer many improvements, including 'generics ' specialization.
 I found out nim compiler is smart enough to make serialization/deserialization to/from msgpack easy and convenient.
 
-**requirement:** nim ver 0.11.2 or later
+**requirement:** nim ver 0.18.1 or later
 
 [![Build Status][badge-msgpack4nim-travisci]][msgpack4nim-travisci]
 

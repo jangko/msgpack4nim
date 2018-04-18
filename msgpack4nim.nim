@@ -538,7 +538,7 @@ proc pack_type*(s: Stream, val: float32) =
 proc pack_type*(s: Stream, val: float64) =
   s.pack_imp_float64(val)
 
-proc pack_type*(s: Stream, val: SomeReal) =
+proc pack_type*(s: Stream, val: SomeFloat) =
   when sizeof(val) == sizeof(float32):
     s.pack_imp_float32(float32(val))
   elif sizeof(val) == sizeof(float64):
@@ -771,7 +771,7 @@ proc unpack_type*(s: Stream, val: var float32) =
 proc unpack_type*(s: Stream, val: var float64) =
   val = s.unpack_imp_float64()
 
-proc unpack_type*(s: Stream, val: var SomeReal) =
+proc unpack_type*(s: Stream, val: var SomeFloat) =
   when sizeof(val) == sizeof(float32):
     result = float32(s.unpack_imp_float32())
   elif sizeof(val) == sizeof(float64):
