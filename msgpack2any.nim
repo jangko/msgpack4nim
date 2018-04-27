@@ -1,4 +1,4 @@
-import msgpack4nim, streams, tables, math, hashes
+import msgpack4nim, streams, tables, math, hashes, strutils
 
 type
   AnyType* = enum
@@ -197,6 +197,11 @@ proc `[]`*(node: MsgAny, name: MsgAny): MsgAny {.inline.} =
   #if not node.mapVal.hasKey(name): return nil
   result = node.mapVal[name]
 
+proc `[]`*(node: MsgAny, name: string): MsgAny {.inline.} =
+  assert(not isNil(node))
+  assert(node.kind == msgMap)
+  result = node.mapVal[name.anyString]
+
 proc `[]`*(node: MsgAny, index: int): MsgAny {.inline.} =
   assert(not isNil(node))
   assert(node.kind == msgArray)
@@ -205,6 +210,14 @@ proc `[]`*(node: MsgAny, index: int): MsgAny {.inline.} =
 proc hasKey*(node: MsgAny, key: MsgAny): bool =
   assert(node.kind == msgMap)
   result = node.mapVal.hasKey(key)
+
+proc hasKey*(node: MsgAny, key: string): bool =
+  assert(node.kind == msgMap)
+  result = node.mapVal.hasKey(key.anyString)
+
+proc contains*(node: MsgAny, key: string): bool =
+  assert(node.kind == msgMap)
+  result = node.mapVal.hasKey(key.anyString)
 
 proc contains*(node: MsgAny, val: MsgAny): bool =
   assert(node.kind in {msgMap, msgArray})
@@ -216,6 +229,10 @@ proc contains*(node: MsgAny, val: MsgAny): bool =
 proc `[]=`*(obj: MsgAny, key: MsgAny, val: MsgAny) {.inline.} =
   assert(obj.kind == msgMap)
   obj.mapVal[key] = val
+
+proc `[]=`*(obj: MsgAny, key: string, val: MsgAny) {.inline.} =
+  assert(obj.kind == msgMap)
+  obj.mapVal[key.anyString] = val
 
 proc getOrDefault*(node: MsgAny, key: MsgAny): MsgAny =
   if not isNil(node) and node.kind == msgMap:
@@ -369,3 +386,93 @@ proc fromAny*(n: MsgAny): string =
 
 proc `$`*(n: MsgAny): string =
   stringify(fromAny(n))
+
+# ------------- pretty printing ----------------------------------------------
+proc indent(s: var string, i: int) =
+  s.add(spaces(i))
+
+proc newIndent(curr, indent: int, ml: bool): int =
+  if ml: return curr + indent
+  else: return indent
+
+proc nl(s: var string, ml: bool) =
+  s.add(if ml: "\n" else: " ")
+
+proc toPretty(result: var string, n: MsgAny, indent = 2, ml = true,
+              lstArr = false, currIndent = 0) =
+  case n.kind
+  of msgNull:
+    if lstArr: result.indent(currIndent)
+    result.add("null")
+  of msgUint:
+    if lstArr: result.indent(currIndent)
+    result.add($n.uintVal)
+  of msgInt:
+    if lstArr: result.indent(currIndent)
+    result.add($n.intVal)
+  of msgFloat64:
+    if lstArr: result.indent(currIndent)
+    result.add($n.float64Val)
+  of msgFloat32:
+    if lstArr: result.indent(currIndent)
+    result.add($n.float32Val)
+  of msgExt:
+    if lstArr: result.indent(currIndent)
+    result.add("EXT: ")
+    result.add toHex(ord(n.extType), 2)
+    result.nl(ml)
+    for cc in n.extData:
+      result.add(toHex(ord(cc), 2))
+  of msgBin:
+    if lstArr: result.indent(currIndent)
+    result.add("BIN: ")
+    for cc in n.binData:
+      result.add(toHex(ord(cc), 2))
+  of msgBool:
+    if lstArr: result.indent(currIndent)
+    result.add($n.boolVal)
+  of msgString:
+    if lstArr: result.indent(currIndent)
+    result.add($n.stringVal)
+  of msgArray:
+    if lstArr: result.indent(currIndent)
+    if n.len != 0:
+      result.add("[")
+      result.nl(ml)
+      for i in 0..<n.len:
+        if i > 0:
+          result.add(",")
+          result.nl(ml) # New Line
+        toPretty(result, n[i], indent, ml,
+            true, newIndent(currIndent, indent, ml))
+      result.nl(ml)
+      result.indent(currIndent)
+      result.add("]")
+    else: result.add("[]")
+  of msgMap:
+    if lstArr: result.indent(currIndent) # Indentation
+    if n.len > 0:
+      result.add("{")
+      result.nl(ml) # New line
+      var i = 0
+      for key, val in n:
+        if i > 0:
+          result.add(",")
+          result.nl(ml) # New Line
+        inc i
+        # Need to indent more than {
+        result.indent(newIndent(currIndent, indent, ml))
+        toPretty(result, key, indent, ml, false,
+                 newIndent(currIndent, indent, ml))
+        result.add(": ")
+        toPretty(result, val, indent, ml, false,
+                 newIndent(currIndent, indent, ml))
+      result.nl(ml)
+      result.indent(currIndent) # indent the same as {
+      result.add("}")
+    else:
+      result.add("{}")
+
+proc pretty*(n: MsgAny, indent = 2): string =
+  result = ""
+  toPretty(result, n, indent)
