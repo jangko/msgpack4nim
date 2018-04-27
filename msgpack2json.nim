@@ -1,13 +1,12 @@
 import msgpack4nim, json, streams, tables, math, base64
 
 proc toJsonNode*(s: Stream): JsonNode =
-  let pos = s.getPosition()
-  let c = ord(s.readChar)
+  let c = ord(s.peekChar)
   case c
   of 0x00..0x7f:
     result = newJInt(BiggestInt(c))
+    discard s.readChar()
   of 0x80..0x8f, 0xde..0xdf:
-    s.setPosition(pos)
     let len = s.unpack_map()
     new(result)
     result.kind = JObject
@@ -17,7 +16,6 @@ proc toJsonNode*(s: Stream): JsonNode =
       if key.kind != JString: raise conversionError("json key needs a string")
       result.fields.add(key.getStr(), toJsonNode(s))
   of 0x90..0x9f, 0xdc..0xdd:
-    s.setPosition(pos)
     let len = s.unpack_array()
     new(result)
     result.kind = JArray
@@ -25,19 +23,21 @@ proc toJsonNode*(s: Stream): JsonNode =
     for i in 0..<len:
       result.elems[i] = toJsonNode(s)
   of 0xa0..0xbf, 0xd9..0xdb:
-    s.setPosition(pos)
     let len = s.unpack_string()
     result = newJString(s.readStr(len))
   of 0xc0:
     result = newJNull()
+    discard s.readChar()
   of 0xc1:
+    discard s.readChar()
     raise conversionError("toJsonNode unused")
   of 0xc2:
     result = newJBool(false)
+    discard s.readChar()
   of 0xc3:
     result = newJBool(true)
+    discard s.readChar()
   of 0xc4..0xc6:
-    s.setPosition(pos)
     result = newJObject()
     let binLen = s.unpack_bin()
     let data = base64.encode(s.readStr(binLen))
@@ -45,7 +45,6 @@ proc toJsonNode*(s: Stream): JsonNode =
     result.add("len", newJInt(binLen.BiggestInt))
     result.add("data", newJString(data))
   of 0xc7..0xc9, 0xd4..0xd8:
-    s.setPosition(pos)
     let (exttype, extlen) = s.unpack_ext()
     let data = base64.encode(s.readStr(extlen))
     result = newJObject()
@@ -54,19 +53,16 @@ proc toJsonNode*(s: Stream): JsonNode =
     result.add("exttype", newJInt(exttype.BiggestInt))
     result.add("data", newJString(data))
   of 0xca:
-    s.setPosition(pos)
     result = newJFloat(s.unpack_imp_float32().float)
   of 0xcb:
-    s.setPosition(pos)
     result = newJFloat(s.unpack_imp_float64().float)
   of 0xcc..0xcf:
-    s.setPosition(pos)
     result = newJInt(s.unpack_imp_uint64().BiggestInt)
   of 0xd0..0xd3:
-    s.setPosition(pos)
     result = newJInt(s.unpack_imp_int64().BiggestInt)
   of 0xe0..0xff:
     result = newJInt(cast[int8](c).BiggestInt)
+    discard s.readChar()
   else:
     raise conversionError("unknown command")
 
@@ -74,7 +70,7 @@ proc toJsonNode*(data: string): JsonNode =
   var s = newStringStream(data)
   result = s.toJsonNode()
 
-proc fromJsonNode*(s: Stream, n: JsonNode) =
+proc fromJsonNode*(s: var MsgStream, n: JsonNode) =
   case n.kind
   of JNull:
     s.write(pack_value_nil)
@@ -97,6 +93,6 @@ proc fromJsonNode*(s: Stream, n: JsonNode) =
       fromJsonNode(s, c)
 
 proc fromJsonNode*(n: JsonNode): string =
-  var s = newStringStream()
+  var s = MsgStream("")
   fromJsonNode(s, n)
-  result = s.data
+  result = s.string

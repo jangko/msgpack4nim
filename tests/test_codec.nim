@@ -20,7 +20,7 @@ proc hash*(c: Choco): Hash =
 
 test "ordinal 8 bit":
   var
-    s = newStringStream()
+    s = MsgStream("")
     a = true
     b = false
 
@@ -30,10 +30,10 @@ test "ordinal 8 bit":
   for i in low(int8)..high(int8): s.pack(i)
   for i in low(uint8)..high(uint8): s.pack(i)
 
-  s.setPosition(0)
+  var ss = newStringStream(s.string)
   var aa,bb:bool
-  s.unpack(aa)
-  s.unpack(bb)
+  ss.unpack(aa)
+  ss.unpack(bb)
   check aa == a
   check bb == b
 
@@ -41,34 +41,34 @@ test "ordinal 8 bit":
   var dd: int8
   var ee: uint8
   for i in low(char)..high(char):
-    s.unpack(cc)
+    ss.unpack(cc)
     check cc == i
 
   for i in low(int8)..high(int8):
-    s.unpack(dd)
+    ss.unpack(dd)
     check dd == i
 
   for i in low(uint8)..high(uint8):
-    s.unpack(ee)
+    ss.unpack(ee)
     check ee == i
 
 test "ordinal 16 bit":
   block one:
-    var s = newStringStream()
+    var s = MsgStream("")
     for i in low(int16)..high(int16): s.pack(i)
-    s.setPosition(0)
+    var ss = newStringStream(s.string)
     var x: int16
     for i in low(int16)..high(int16):
-      s.unpack(x)
+      ss.unpack(x)
       check x == i
 
   block two:
-    var s = newStringStream()
+    var s = MsgStream("")
     for i in low(uint16)..high(uint16): s.pack(i)
-    s.setPosition(0)
+    var ss = newStringStream(s.string)
     var x: uint16
     for i in low(uint16)..high(uint16):
-      s.unpack(x)
+      ss.unpack(x)
       check x == i
 
 test "ordinal 32 bit":
@@ -80,13 +80,13 @@ test "ordinal 32 bit":
     high(int16)+2,high(int32)]
 
   block one:
-    var s = newStringStream()
+    var s = MsgStream("")
     var x: int32
+    for i in uu: s.pack(i)
+
+    var ss = newStringStream(s.string)
     for i in uu:
-      s.pack(i)
-      s.setPosition(0)
-      s.unpack(x)
-      s.setPosition(0)
+      ss.unpack(x)
       check x == i
 
   var vv = [low(uint32), low(uint32)+1, low(uint32)+2, high(uint32), high(uint32)-1,
@@ -96,13 +96,14 @@ test "ordinal 32 bit":
     high(uint16)+2]
 
   block two:
-    var s = newStringStream()
+    var s = MsgStream("")
     var x: uint32
+
+    for i in vv: s.pack(i)
+
+    var ss = newStringStream(s.string)
     for i in vv:
-      s.pack(i)
-      s.setPosition(0)
-      s.unpack(x)
-      s.setPosition(0)
+      ss.unpack(x)
       check x == i
 
 test "ordinal 64 bit":
@@ -116,13 +117,14 @@ test "ordinal 64 bit":
     low(int32)-1,low(int32)-2]
 
   block one:
-    var s = newStringStream()
+    var s = MsgStream("")
     var x: int64
+
+    for i in uu: s.pack(i)
+
+    var ss = newStringStream(s.string)
     for i in uu:
-      s.pack(i)
-      s.setPosition(0)
-      s.unpack(x)
-      s.setPosition(0)
+      ss.unpack(x)
       check x == i
 
   var vv = [0xFFFFFFFFFFFFFFFFFFFFFF'u64, low(uint32), low(uint32)+1, low(uint32)+2, high(uint32), high(uint32)-1,
@@ -132,13 +134,14 @@ test "ordinal 64 bit":
     high(uint16)+2, 0xFFFFFFFFFFFFFFFFFFFFFF'u64-1, 0xFFFFFFFFFFFFFFFFFFFFFF'u64-2]
 
   block two:
-    var s = newStringStream()
+    var s = MsgStream("")
     var x: uint64
+
+    for i in vv: s.pack(i)
+
+    var ss = newStringStream(s.string)
     for i in vv:
-      s.pack(i)
-      s.setPosition(0)
-      s.unpack(x)
-      s.setPosition(0)
+      ss.unpack(x)
       check x == i
 
 test "string":
@@ -146,7 +149,7 @@ test "string":
   var e = repeat('a', 200)
   var f = repeat('b', 3000)
   var g = repeat('c', 70000)
-  var s = newStringStream()
+  var s = MsgStream("")
 
   var dd,ee,ff,gg: string
   s.pack(d)
@@ -154,12 +157,12 @@ test "string":
   s.pack(f)
   s.pack(g)
 
-  s.setPosition(0)
-  s.unpack(dd)
+  var ss = newStringStream(s.string)
+  ss.unpack(dd)
   check dd == d
-  s.unpack(ee)
-  s.unpack(ff)
-  s.unpack(gg)
+  ss.unpack(ee)
+  ss.unpack(ff)
+  ss.unpack(gg)
   check ee == e
   check ff == f
   check gg == g
@@ -168,25 +171,25 @@ test "float number":
   var xx = [-1.0'f32, -2.0, 0.0, Inf, NegInf, 1.0, 2.0]
 
   block one:
-    var s = newStringStream()
+    var s = MsgStream("")
     var x: float32
+    for i in xx: s.pack(i)
+
+    var ss = newStringStream(s.string)
     for i in xx:
-      s.pack(i)
-      s.setPosition(0)
-      s.unpack(x)
-      s.setPosition(0)
+      ss.unpack(x)
       check x == i
 
   var vv = [-1.0'f64, -2.0, 0.0, Inf, NegInf, 1.0, 2.0]
 
   block two:
-    var s = newStringStream()
+    var s = MsgStream("")
     var x: float64
+    for i in vv: s.pack(i)
+
+    var ss = newStringStream(s.string)
     for i in vv:
-      s.pack(i)
-      s.setPosition(0)
-      s.unpack(x)
-      s.setPosition(0)
+      ss.unpack(x)
       check x == i
 
 test "set":
@@ -213,19 +216,19 @@ test "set":
   z.incl(ssbottom)
   z.incl(ssright)
 
-  var s = newStringStream()
+  var s = MsgStream("")
   s.pack(x)
   s.pack(y)
   s.pack(a)
   s.pack(b)
 
-  s.setPosition(0)
-  s.unpack(xx)
-  s.unpack(yy)
+  var ss = newStringStream(s.string)
+  ss.unpack(xx)
+  ss.unpack(yy)
   check x == xx
   check y == yy
-  s.unpack(aa)
-  s.unpack(bb)
+  ss.unpack(aa)
+  ss.unpack(bb)
   check a == aa
   check b == bb
 
@@ -301,7 +304,7 @@ test "container":
   k.incl("hello")
   k.incl("world")
 
-  var s = newStringStream()
+  var s = MsgStream("")
   s.pack(a)
   s.pack(b)
   s.pack(c)
@@ -312,7 +315,7 @@ test "container":
   s.pack(h)
   s.pack(k)
 
-  s.setPosition(0)
+  var ss = newStringStream(s.string)
   var aa: IntSet
   var bb: SinglyLinkedList[Choco]
   var cc: DoublyLinkedList[Choco]
@@ -323,15 +326,15 @@ test "container":
   var hh: OrderedSet[Choco]
   var kk: CritBitTree[void]
 
-  s.unpack(aa)
-  s.unpack(bb)
-  s.unpack(cc)
-  s.unpack(dd)
-  s.unpack(ee)
-  s.unpack(ff)
-  s.unpack(gg)
-  s.unpack(hh)
-  s.unpack(kk)
+  ss.unpack(aa)
+  ss.unpack(bb)
+  ss.unpack(cc)
+  ss.unpack(dd)
+  ss.unpack(ee)
+  ss.unpack(ff)
+  ss.unpack(gg)
+  ss.unpack(hh)
+  ss.unpack(kk)
 
   check aa == a
   check bb == b
@@ -360,7 +363,7 @@ test "map":
     for k,v in pairs(b): yy.add((k,v))
     result = xx == yy
 
-  var s = newStringStream()
+  var s = MsgStream("")
   var a = initTable[string, Choco]()
   var b = newTable[string, Choco]()
   var c = initOrderedTable[string, Choco]()
@@ -390,7 +393,7 @@ test "map":
   s.pack(e)
   s.pack(f)
 
-  s.setPosition(0)
+  var ss = newStringStream(s.string)
   var aa: Table[string, Choco]
   var bb: TableRef[string, Choco]
   var cc: OrderedTable[string, Choco]
@@ -398,12 +401,12 @@ test "map":
   var ee: StringTableRef
   var ff: CritBitTree[Choco]
 
-  s.unpack(aa)
-  s.unpack(bb)
-  s.unpack(cc)
-  s.unpack(dd)
-  s.unpack(ee)
-  s.unpack(ff)
+  ss.unpack(aa)
+  ss.unpack(bb)
+  ss.unpack(cc)
+  ss.unpack(dd)
+  ss.unpack(ee)
+  ss.unpack(ff)
 
   check aa == a
   check bb == b
@@ -413,7 +416,7 @@ test "map":
   check ff.equal f
 
 test "array":
-  var s = newStringStream()
+  var s = MsgStream("")
   var a = [0, 1, 2, 3]
   var b = ["a", "abc", "def"]
   var c = @[0, 1, 2, 3]
@@ -429,11 +432,11 @@ test "array":
   var cc: seq[int]
   var dd: seq[string]
 
-  s.setPosition(0)
-  s.unpack(aa)
-  s.unpack(bb)
-  s.unpack(cc)
-  s.unpack(dd)
+  var ss = newStringStream(s.string)
+  ss.unpack(aa)
+  ss.unpack(bb)
+  ss.unpack(cc)
+  ss.unpack(dd)
 
   check aa == a
   check bb == b
@@ -448,19 +451,19 @@ test "tuple":
       def: string
       ghi: float
 
-  var s = newStringStream()
+  var s = MsgStream("")
   var a: ttt = ("hello", -1, 1, 1.0)
   var b = www(abc:1, def: "hello", ghi: 1.0)
 
   s.pack(a)
   s.pack(b)
 
-  s.setPosition(0)
+  var ss = newStringStream(s.string)
   var aa: ttt
   var bb: www
 
-  s.unpack(aa)
-  s.unpack(bb)
+  ss.unpack(aa)
+  ss.unpack(bb)
 
   check aa == a
   check bb == b
@@ -495,7 +498,7 @@ test "ref type":
   new(refint)
   refint[] = 45
 
-  var s = newStringStream()
+  var s = MsgStream("")
   s.pack(refint)
 
   var buf = pack(refint)
@@ -716,7 +719,7 @@ test "weapon":
 test "bin/ext":
   const exttype0 = 0
 
-  var s = newStringStream()
+  var s = MsgStream("")
   var body = "this is the body"
 
   s.pack_ext(body.len, exttype0)
@@ -726,16 +729,16 @@ test "bin/ext":
   s.pack_bin(body.len)
   s.write(body)
 
-  s.setPosition(0)
+  var ss = newStringStream(s.string)
   #unpack_ext return tuple[exttype:uint8, len: int]
-  let (extype, extlen) = s.unpack_ext()
-  var extbody = s.readStr(extlen)
+  let (extype, extlen) = ss.unpack_ext()
+  var extbody = ss.readStr(extlen)
 
   check extbody == body
   check extype == exttype0
 
-  let binlen = s.unpack_bin()
-  var binbody = s.readStr(binlen)
+  let binlen = ss.unpack_bin()
+  var binbody = ss.readStr(binlen)
 
   check binbody == body
 

@@ -36,14 +36,12 @@ proc initCustomType(): CustomType =
   result.ok = false
 
 var x = initCustomType()
-#you can use another stream compatible
-#class here e.g. FileStream
-var s = newStringStream()
+var s = MsgStream("")
 s.pack(x) #here the magic happened
 
-s.setPosition(0)
+var ss = newStringStream(s.string)
 var xx: CustomType
-s.unpack(xx) #and here too
+ss.unpack(xx) #and here too
 
 assert xx == x
 echo "OK ", xx.name
@@ -70,22 +68,21 @@ type
     b: someSimpleType
 
 #help the compiler to decide
-proc pack_type*(s: Stream, x: mycomplexobject) =
+proc pack_type*(s: var MsgStream, x: mycomplexobject) =
   s.pack(x.a) # let the compiler decide
   s.pack(x.b) # let the compiler decide
 
 #help the compiler to decide
-proc unpack_type*(s: Stream, x: var mycomplexobject) =
+proc unpack_type*(s: var MsgStream, x: var mycomplexobject) =
   s.unpack(x.a)
   s.unpack(x.b)
 
-var s = newStringStream()
+var s = MsgStream("")
 var x: mycomplexobject
-
 s.pack(x) #pack as usual
 
-s.setPosition(0)
-s.unpack(x) #unpack as usual
+var ss = newStringStream(s.string)
+ss.unpack(x) #unpack as usual
 ```
 
 ## Data Conversion
@@ -275,7 +272,7 @@ import streams, msgpack4nim
 
 const exttype0 = 0
 
-var s = newStringStream()
+var s = MsgStream("")
 var body = "this is the body"
 
 s.pack_ext(body.len, exttype0)
@@ -285,15 +282,15 @@ s.write(body)
 s.pack_bin(body.len)
 s.write(body)
 
-s.setPosition(0)
+var ss = newStringStream(s.string)
 #unpack_ext return tuple[exttype:uint8, len: int]
-let (extype, extlen) = s.unpack_ext()
-var extbody = s.readStr(extlen)
+let (extype, extlen) = ss.unpack_ext()
+var extbody = ss.readStr(extlen)
 
 assert extbody == body
 
-let binlen = s.unpack_bin()
-var binbody = s.readStr(binlen)
+let binlen = ss.unpack_bin()
+var binbody = ss.readStr(binlen)
 
 assert binbody == body
 ```

@@ -28,6 +28,24 @@ import tables, intsets, lists, deques, sets, strtabs, critbits, macros
 
 const pack_value_nil* = chr(0xc0)
 
+type
+  MsgStream* = distinct string
+
+proc writeData(s: var MsgStream, buffer: cstring, bufLen: int) =
+  if bufLen <= 0: return
+  let pos = string(s).len
+  string(s).setLen(pos + bufLen)
+  for i in 0..<bufLen:
+    string(s)[i + pos] = buffer[i]
+
+proc write*[T](s: var MsgStream, val: T) =
+  var y: T
+  shallowCopy(y, val)
+  writeData(s, cast[cstring](addr(y)), sizeof(y))
+
+proc write*(s: var MsgStream, val: string) =
+  if val.len > 0: writeData(s, unsafeAddr val[0], val.len)
+
 proc conversionError*(msg: string): ref ObjectConversionError =
   new(result)
   result.msg = msg
@@ -49,15 +67,15 @@ when system.cpuEndian == littleEndian:
   proc take8_32(val: uint32): uint8 {.inline.} = uint8(val and 0xFF)
   proc take8_64(val: uint64): uint8 {.inline.} = uint8(val and 0xFF)
 
-  proc store16(s: Stream, val: uint16) =
+  proc store16(s: var MsgStream, val: uint16) =
     var res: uint16
     swapEndian16(addr(res), unsafeAddr(val))
     s.write(res)
-  proc store32(s: Stream, val: uint32) =
+  proc store32(s: var MsgStream, val: uint32) =
     var res: uint32
     swapEndian32(addr(res), unsafeAddr(val))
     s.write(res)
-  proc store64(s: Stream, val: uint64) =
+  proc store64(s: var MsgStream, val: uint64) =
     var res: uint64
     swapEndian64(addr(res), unsafeAddr(val))
     s.write(res)
@@ -76,26 +94,26 @@ else:
   proc take8_32(val: uint32): uint8 {.inline.} = (val shr 24) and 0xFF
   proc take8_64(val: uint64): uint8 {.inline.} = uint8((val shr 56) and 0xFF)
 
-  proc store16(s: Stream, val: uint16) = s.write(val)
-  proc store32(s: Stream, val: uint32) = s.write(val)
-  proc store64(s: Stream, val: uint64) = s.write(val)
-  proc unstore16(s: Stream): uint16 = cast[uint16](s.readInt16)
-  proc unstore32(s: Stream): uint32 = cast[uint32](s.readInt32)
-  proc unstore64(s: Stream): uint64 = cast[uint64](s.readInt64)
+  proc store16(s: var MsgStream, val: uint16) = s.write(val)
+  proc store32(s: var MsgStream, val: uint32) = s.write(val)
+  proc store64(s: var MsgStream, val: uint64) = s.write(val)
+  proc unstore16(s: var MsgStream): uint16 = cast[uint16](s.readInt16)
+  proc unstore32(s: var MsgStream): uint32 = cast[uint32](s.readInt32)
+  proc unstore64(s: var MsgStream): uint64 = cast[uint64](s.readInt64)
 
 proc take8_8[T:uint8|char|int8](val: T): uint8 {.inline.} = uint8(val)
 proc take16_8[T:uint8|char|int8](val: T): uint16 {.inline.} = uint16(val)
 proc take32_8[T:uint8|char|int8](val: T): uint32 {.inline.} = uint32(val)
 proc take64_8[T:uint8|char|int8](val: T): uint64 {.inline.} = uint64(val)
 
-proc pack_bool(s: Stream, val: bool) =
+proc pack_bool(s: var MsgStream, val: bool) =
   if val: s.write(chr(0xc3))
   else: s.write(chr(0xc2))
 
-proc pack_imp_nil(s: Stream) =
+proc pack_imp_nil(s: var MsgStream) =
   s.write(chr(0xc0))
 
-proc pack_imp_uint8(s: Stream, val: uint8) =
+proc pack_imp_uint8(s: var MsgStream, val: uint8) =
   if val < uint8(1 shl 7):
     #fixnum
     s.write(take8_8(val))
@@ -111,7 +129,7 @@ proc unpack_imp_uint8(s: Stream): uint8 =
     result = uint8(s.readChar)
   else: raise conversionError("uint8")
 
-proc pack_imp_uint16(s: Stream, val: uint16) =
+proc pack_imp_uint16(s: var MsgStream, val: uint16) =
   if val < uint16(1 shl 7):
     #fixnum
     s.write(take8_16(val))
@@ -133,7 +151,7 @@ proc unpack_imp_uint16(s: Stream): uint16 =
     result = s.unstore16()
   else: raise conversionError("uint16")
 
-proc pack_imp_uint32(s: Stream, val: uint32) =
+proc pack_imp_uint32(s: var MsgStream, val: uint32) =
   if val < uint32(1 shl 8):
     if val < uint32(1 shl 7):
       #fixnum
@@ -163,7 +181,7 @@ proc unpack_imp_uint32(s: Stream): uint32 =
     result = s.unstore32()
   else: raise conversionError("uint32")
 
-proc pack_imp_uint64(s: Stream, val: uint64) =
+proc pack_imp_uint64(s: var MsgStream, val: uint64) =
   if val < uint64(1 shl 8):
     if val < uint64(1 shl 7):
       #fixnum
@@ -199,7 +217,7 @@ proc unpack_imp_uint64*(s: Stream): uint64 =
     result = s.unstore64()
   else: raise conversionError("uint64")
 
-proc pack_imp_int8(s: Stream, val: int8) =
+proc pack_imp_int8(s: var MsgStream, val: int8) =
   if val < -(1 shl 5):
     #signed 8
     s.write(chr(0xd0))
@@ -218,7 +236,7 @@ proc unpack_imp_int8(s: Stream): int8 =
     result = cast[int8](s.readChar)
   else: raise conversionError("int8")
 
-proc pack_imp_int16(s: Stream, val: int16) =
+proc pack_imp_int16(s: var MsgStream, val: int16) =
   if val < -(1 shl 5):
     if val < -(1 shl 7):
       #signed 16
@@ -259,7 +277,7 @@ proc unpack_imp_int16(s: Stream): int16 =
     result = cast[int16](s.unstore16)
   else: raise conversionError("int16")
 
-proc pack_imp_int32(s: Stream, val: int32) =
+proc pack_imp_int32(s: var MsgStream, val: int32) =
   if val < -(1 shl 5):
     if val < -(1 shl 15):
       #signed 32
@@ -312,7 +330,7 @@ proc unpack_imp_int32(s: Stream): int32 =
     result = cast[int32](s.unstore32)
   else: raise conversionError("int32")
 
-proc pack_imp_int64(s: Stream, val: int64) =
+proc pack_imp_int64(s: var MsgStream, val: int64) =
   if val < -(1 shl 5):
     if val < -(1 shl 31):
       #signed 64
@@ -377,14 +395,14 @@ proc unpack_imp_int64*(s: Stream): int64 =
     result = cast[int64](s.unstore64)
   else: raise conversionError("int64")
 
-proc pack_imp_int(s: Stream, val: int) =
+proc pack_imp_int(s: var MsgStream, val: int) =
   case sizeof(val)
   of 1: s.pack_imp_int8(int8(val))
   of 2: s.pack_imp_int16(int16(val))
   of 4: s.pack_imp_int32(int32(val))
   else: s.pack_imp_int64(int64(val))
 
-proc pack_array*(s: Stream, len: int) =
+proc pack_array*(s: var MsgStream, len: int) =
   if len <= 0x0F:
     s.write(chr(0b10010000 or (len and 0x0F)))
   elif len > 0x0F and len <= 0xFFFF:
@@ -394,7 +412,7 @@ proc pack_array*(s: Stream, len: int) =
     s.write(chr(0xdd))
     s.store32(uint32(len))
 
-proc pack_map*(s: Stream, len: int) =
+proc pack_map*(s: var MsgStream, len: int) =
   if len <= 0x0F:
     s.write(chr(0b10000000 or (len and 0x0F)))
   elif len > 0x0F and len <= 0xFFFF:
@@ -404,7 +422,7 @@ proc pack_map*(s: Stream, len: int) =
     s.write(chr(0xdf))
     s.store32(uint32(len))
 
-proc pack_bin*(s: Stream, len: int) =
+proc pack_bin*(s: var MsgStream, len: int) =
   if len <= 0xFF:
     s.write(chr(0xc4))
     s.write(uint8(len))
@@ -415,7 +433,7 @@ proc pack_bin*(s: Stream, len: int) =
     s.write(chr(0xc6))
     s.store32(uint32(len))
 
-proc pack_ext*(s: Stream, len: int, exttype: int8) =
+proc pack_ext*(s: var MsgStream, len: int, exttype: int8) =
   case len
   of 1:
     s.write(chr(0xd4))
@@ -446,7 +464,7 @@ proc pack_ext*(s: Stream, len: int, exttype: int8) =
       s.store32(uint32(len))
       s.write(exttype)
 
-proc pack_string*(s: Stream, len: int) =
+proc pack_string*(s: var MsgStream, len: int) =
   if len < 32:
     var d = uint8(0xa0) or uint8(len)
     s.write(take8_8(d))
@@ -460,43 +478,43 @@ proc pack_string*(s: Stream, len: int) =
     s.write(chr(0xdb))
     s.store32(uint32(len))
 
-proc pack_type*(s: Stream, val: bool) =
+proc pack_type*(s: var MsgStream, val: bool) =
   s.pack_bool(val)
 
-proc pack_type*(s: Stream, val: char) =
+proc pack_type*(s: var MsgStream, val: char) =
   s.pack_imp_uint8(uint8(val))
 
-proc pack_type*(s: Stream, val: string) =
+proc pack_type*(s: var MsgStream, val: string) =
   if isNil(val): s.pack_imp_nil()
   else:
     s.pack_string(val.len)
     s.write(val)
 
-proc pack_type*(s: Stream, val: uint8) =
+proc pack_type*(s: var MsgStream, val: uint8) =
   s.pack_imp_uint8(val)
 
-proc pack_type*(s: Stream, val: uint16) =
+proc pack_type*(s: var MsgStream, val: uint16) =
   s.pack_imp_uint16(val)
 
-proc pack_type*(s: Stream, val: uint32) =
+proc pack_type*(s: var MsgStream, val: uint32) =
   s.pack_imp_uint32(val)
 
-proc pack_type*(s: Stream, val: uint64) =
+proc pack_type*(s: var MsgStream, val: uint64) =
   s.pack_imp_uint64(val)
 
-proc pack_type*(s: Stream, val: int8) =
+proc pack_type*(s: var MsgStream, val: int8) =
   s.pack_imp_int8(val)
 
-proc pack_type*(s: Stream, val: int16) =
+proc pack_type*(s: var MsgStream, val: int16) =
   s.pack_imp_int16(val)
 
-proc pack_type*(s: Stream, val: int32) =
+proc pack_type*(s: var MsgStream, val: int32) =
   s.pack_imp_int32(val)
 
-proc pack_type*(s: Stream, val: int64) =
+proc pack_type*(s: var MsgStream, val: int64) =
   s.pack_imp_int64(val)
 
-proc pack_int_imp_select[T](s: Stream, val: T) =
+proc pack_int_imp_select[T](s: var MsgStream, val: T) =
   when sizeof(val) == 1:
     s.pack_imp_int8(int8(val))
   elif sizeof(val) == 2:
@@ -506,7 +524,7 @@ proc pack_int_imp_select[T](s: Stream, val: T) =
   else:
     s.pack_imp_int64(int64(val))
 
-proc pack_uint_imp_select[T](s: Stream, val: T) =
+proc pack_uint_imp_select[T](s: var MsgStream, val: T) =
   if sizeof(T) == 1:
     s.pack_imp_uint8(cast[uint8](val))
   elif sizeof(T) == 2:
@@ -516,29 +534,29 @@ proc pack_uint_imp_select[T](s: Stream, val: T) =
   else:
     s.pack_imp_uint64(cast[uint64](val))
 
-proc pack_type*(s: Stream, val: int) =
+proc pack_type*(s: var MsgStream, val: int) =
   pack_int_imp_select(s, val)
 
-proc pack_type*(s: Stream, val: uint) =
+proc pack_type*(s: var MsgStream, val: uint) =
   pack_uint_imp_select(s, val)
 
-proc pack_imp_float32(s: Stream, val: float32) {.inline.} =
+proc pack_imp_float32(s: var MsgStream, val: float32) {.inline.} =
   let tmp = cast[uint32](val)
   s.write(chr(0xca))
   s.store32(tmp)
 
-proc pack_imp_float64(s: Stream, val: float64) {.inline.} =
+proc pack_imp_float64(s: var MsgStream, val: float64) {.inline.} =
   let tmp = cast[uint64](val)
   s.write(chr(0xcb))
   s.store64(tmp)
 
-proc pack_type*(s: Stream, val: float32) =
+proc pack_type*(s: var MsgStream, val: float32) =
   s.pack_imp_float32(val)
 
-proc pack_type*(s: Stream, val: float64) =
+proc pack_type*(s: var MsgStream, val: float64) =
   s.pack_imp_float64(val)
 
-proc pack_type*(s: Stream, val: SomeFloat) =
+proc pack_type*(s: var MsgStream, val: SomeFloat) =
   when sizeof(val) == sizeof(float32):
     s.pack_imp_float32(float32(val))
   elif sizeof(val) == sizeof(float64):
@@ -546,104 +564,104 @@ proc pack_type*(s: Stream, val: SomeFloat) =
   else:
     raise conversionError("float")
 
-proc pack_type*[T](s: Stream, val: set[T]) =
+proc pack_type*[T](s: var MsgStream, val: set[T]) =
   s.pack_array(card(val))
   for e in items(val):
     s.pack_imp_uint64(uint64(e))
 
-proc pack_items_imp[T](s: Stream, val: T) {.inline.} =
-  var ss = newStringStream()
+proc pack_items_imp[T](s: var MsgStream, val: T) {.inline.} =
+  var ss = MsgStream("")
   var count = 0
   for i in items(val):
     ss.pack undistinct(i)
     inc(count)
   s.pack_array(count)
-  s.write(ss.data)
+  string(s).add(ss.string)
 
-proc pack_type*(s: Stream, val: IntSet) =
-  var ss = newStringStream()
+proc pack_type*(s: var MsgStream, val: IntSet) =
+  var ss = MsgStream("")
   var count = 0
   for i in items(val):
     ss.pack_imp_int(i)
     inc(count)
   s.pack_array(count)
-  s.write(ss.data)
+  string(s).add(ss.string)
 
-proc pack_type*[T](s: Stream, val: SinglyLinkedList[T]) =
+proc pack_type*[T](s: var MsgStream, val: SinglyLinkedList[T]) =
   s.pack_items_imp(val)
 
-proc pack_type*[T](s: Stream, val: DoublyLinkedList[T]) =
+proc pack_type*[T](s: var MsgStream, val: DoublyLinkedList[T]) =
   s.pack_items_imp(val)
 
-proc pack_type*[T](s: Stream, val: SinglyLinkedRing[T]) =
+proc pack_type*[T](s: var MsgStream, val: SinglyLinkedRing[T]) =
   s.pack_items_imp(val)
 
-proc pack_type*[T](s: Stream, val: DoublyLinkedRing[T]) =
+proc pack_type*[T](s: var MsgStream, val: DoublyLinkedRing[T]) =
   s.pack_items_imp(val)
 
-proc pack_type*[T](s: Stream, val: Deque[T]) =
+proc pack_type*[T](s: var MsgStream, val: Deque[T]) =
   s.pack_array(val.len)
   for i in items(val): s.pack_type undistinct(i)
 
-proc pack_type*[T](s: Stream, val: HashSet[T]) =
+proc pack_type*[T](s: var MsgStream, val: HashSet[T]) =
   s.pack_array(val.len)
   for i in items(val): s.pack_type undistinct(i)
 
-proc pack_type*[T](s: Stream, val: OrderedSet[T]) =
+proc pack_type*[T](s: var MsgStream, val: OrderedSet[T]) =
   s.pack_array(val.len)
   for i in items(val): s.pack_type undistinct(i)
 
-proc pack_map_imp[T](s: Stream, val: T) {.inline.} =
+proc pack_map_imp[T](s: var MsgStream, val: T) {.inline.} =
   s.pack_map(val.len)
   for k,v in pairs(val):
     s.pack_type undistinct(k)
     s.pack_type undistinct(v)
 
-proc pack_type*[K,V](s: Stream, val: Table[K,V]) =
+proc pack_type*[K,V](s: var MsgStream, val: Table[K,V]) =
   s.pack_map_imp(val)
 
-proc pack_type*[K,V](s: Stream, val: TableRef[K,V]) =
+proc pack_type*[K,V](s: var MsgStream, val: TableRef[K,V]) =
   if isNil(val): s.pack_imp_nil()
   else:
     s.pack_map_imp(val)
 
-proc pack_type*[K,V](s: Stream, val: OrderedTable[K,V]) =
+proc pack_type*[K,V](s: var MsgStream, val: OrderedTable[K,V]) =
   s.pack_map_imp(val)
 
-proc pack_type*[K,V](s: Stream, val: OrderedTableRef[K,V]) =
+proc pack_type*[K,V](s: var MsgStream, val: OrderedTableRef[K,V]) =
   if isNil(val): s.pack_imp_nil()
   else:
     s.pack_map_imp(val)
 
-proc pack_type*(s: Stream, val: StringTableRef) =
+proc pack_type*(s: var MsgStream, val: StringTableRef) =
   if isNil(val): s.pack_imp_nil()
   else:
     s.pack_map_imp(val)
 
-proc pack_type*[T](s: Stream, val: CritBitTree[T]) =
+proc pack_type*[T](s: var MsgStream, val: CritBitTree[T]) =
   when T is void:
     s.pack_array(val.len)
     for i in items(val): s.pack_type(i)
   else:
     s.pack_map_imp(val)
 
-proc pack_type*[T](s: Stream, val: openarray[T]) =
+proc pack_type*[T](s: var MsgStream, val: openArray[T]) =
   s.pack_array(val.len)
   for i in 0..val.len-1: s.pack_type undistinct(val[i])
 
-proc pack_type*[T](s: Stream, val: seq[T]) =
+proc pack_type*[T](s: var MsgStream, val: seq[T]) =
   if isNil(val): s.pack_imp_nil()
   else:
     s.pack_array(val.len)
     for i in 0..val.len-1: s.pack_type undistinct(val[i])
 
-proc pack_type*[T: enum|range](s: Stream, val: T) =
+proc pack_type*[T: enum|range](s: var MsgStream, val: T) =
   when val is range:
     pack_int_imp_select(s, val.int64)
   else:
     pack_int_imp_select(s, val)
 
-proc pack_type*[T: tuple|object](s: Stream, val: T) =
+proc pack_type*[T: tuple|object](s: var MsgStream, val: T) =
   var len = 0
   for field in fields(val):
     inc(len)
@@ -661,11 +679,11 @@ proc pack_type*[T: tuple|object](s: Stream, val: T) =
     for field in fields(val):
       s.pack_type undistinct(field)
 
-proc pack_type*[T: ref](s: Stream, val: T) =
+proc pack_type*[T: ref](s: var MsgStream, val: T) =
   if isNil(val): s.pack_imp_nil()
   else: s.pack_type(val[])
 
-proc pack_type*[T](s: Stream, val: ptr T) =
+proc pack_type*[T](s: var MsgStream, val: ptr T) =
   if isNil(val): s.pack_imp_nil()
   else: s.pack_type(val[])
 
@@ -694,12 +712,10 @@ proc unpack_string*(s: Stream): int =
     result = int(s.unstore32())
 
 proc unpack_type*(s: Stream, val: var string) =
-  let pos = s.getPosition()
-  if s.readChar == pack_value_nil:
+  if s.peekChar == pack_value_nil:
     val = nil
     return
 
-  s.setPosition(pos)
   let len = s.unpack_string()
   if len < 0: raise conversionError("string")
   val = s.readStr(len)
@@ -886,10 +902,8 @@ proc unpack_type*[K,V](s: Stream, val: var Table[K,V]) =
     val[k] = v
 
 proc unpack_type*[K,V](s: Stream, val: var TableRef[K,V]) =
-  let pos = s.getPosition()
-  if s.readChar == pack_value_nil: return
+  if s.peekChar == pack_value_nil: return
 
-  s.setPosition(pos)
   let len = s.unpack_map()
   if len < 0: raise conversionError("tableref")
 
@@ -914,10 +928,8 @@ proc unpack_type*[K,V](s: Stream, val: var OrderedTable[K,V]) =
     val[k] = v
 
 proc unpack_type*[K,V](s: Stream, val: var OrderedTableRef[K,V]) =
-  let pos = s.getPosition()
-  if s.readChar == pack_value_nil: return
+  if s.peekChar == pack_value_nil: return
 
-  s.setPosition(pos)
   let len = s.unpack_map()
   if len < 0: raise conversionError("ordered tableref")
 
@@ -930,10 +942,8 @@ proc unpack_type*[K,V](s: Stream, val: var OrderedTableRef[K,V]) =
     val[k] = v
 
 proc unpack_type*(s: Stream, val: var StringTableRef) =
-  let pos = s.getPosition()
-  if s.readChar == pack_value_nil: return
+  if s.peekChar == pack_value_nil: return
 
-  s.setPosition(pos)
   let len = s.unpack_map()
   if len < 0: raise conversionError("string table")
 
@@ -964,12 +974,10 @@ proc unpack_type*[T](s: Stream, val: var CritBitTree[T]) =
       val[k] = v
 
 proc unpack_type*[T](s: Stream, val: var seq[T]) =
-  let pos = s.getPosition()
-  if s.readChar == pack_value_nil:
+  if s.peekChar == pack_value_nil:
     val = nil
     return
 
-  s.setPosition(pos)
   let len = s.unpack_array()
   if len < 0: raise conversionError("sequence")
   var x:T
@@ -1027,16 +1035,12 @@ proc unpack_type*[T: tuple|object](s: Stream, val: var T) =
       unpack_proxy(field)
 
 proc unpack_type*[T: ref](s: Stream, val: var T) =
-  let pos = s.getPosition()
-  if s.readChar == pack_value_nil: return
-  s.setPosition(pos)
+  if s.peekChar == pack_value_nil: return
   if isNil(val): new(val)
   s.unpack(val[])
 
 proc unpack_type*[T](s: Stream, val: var ptr T) =
-  let pos = s.getPosition()
-  if s.readChar == pack_value_nil: return
-  s.setPosition(pos)
+  if s.peekChar == pack_value_nil: return
   if isNil(val): val = cast[ptr T](alloc(sizeof(T)))
   s.unpack(val[])
 
@@ -1085,7 +1089,7 @@ proc unpack_ext*(s: Stream): tuple[exttype:uint8, len: int] =
     else:
       raise conversionError("ext")
 
-proc pack_type*[T: proc](s: Stream, val: T) =
+proc pack_type*[T: proc](s: var MsgStream, val: T) =
   discard
   #raise conversionError("can't convert proc type")
 
@@ -1093,7 +1097,7 @@ proc unpack_type*[T: proc](s: Stream, val: var T) =
   discard
   #raise conversionError("can't convert proc type")
 
-proc pack_type*(s: Stream, val: cstring) =
+proc pack_type*(s: var MsgStream, val: cstring) =
   discard
   #raise conversionError("can't convert cstring type")
 
@@ -1101,7 +1105,7 @@ proc unpack_type*(s: Stream, val: var cstring) =
   discard
   #raise conversionError("can't convert cstring type")
 
-proc pack_type*(s: Stream, val: pointer) =
+proc pack_type*(s: var MsgStream, val: pointer) =
   discard
   #raise conversionError("can't convert pointer type")
 
@@ -1109,13 +1113,13 @@ proc unpack_type*(s: Stream, val: var pointer) =
   discard
   #raise conversionError("can't convert pointer type")
 
-proc pack*[T](s: Stream, val: T) = s.pack_type undistinct(val)
+proc pack*[T](s: var MsgStream, val: T) = s.pack_type undistinct(val)
 proc unpack*[T](s: Stream, val: var T) = s.unpack_type undistinct(val)
 
 proc pack*[T](val: T): string =
-  var s = newStringStream()
+  var s = MsgStream("")
   s.pack(val)
-  result = s.data
+  result = s.string
 
 proc unpack*[T](data: string, val: var T) =
   var s = newStringStream(data)
@@ -1123,14 +1127,13 @@ proc unpack*[T](data: string, val: var T) =
   s.unpack(val)
 
 proc stringify(s: Stream, zz: Stream) =
-  let pos = s.getPosition()
-  let c = ord(s.readChar)
+  let c = ord(s.peekChar)
   var len = 0
   case c
   of 0x00..0x7f:
     zz.write($c)
+    discard s.readChar()
   of 0x80..0x8f:
-    s.setPosition(pos)
     len = s.unpack_map()
     zz.write("{ ")
     for i in 0..len-1:
@@ -1140,7 +1143,6 @@ proc stringify(s: Stream, zz: Stream) =
       stringify(s, zz)
     zz.write(" }")
   of 0x90..0x9f:
-    s.setPosition(pos)
     len = s.unpack_array()
     zz.write("[ ")
     for i in 0..len-1:
@@ -1148,61 +1150,55 @@ proc stringify(s: Stream, zz: Stream) =
       stringify(s, zz)
     zz.write(" ]")
   of 0xa0..0xbf:
-    s.setPosition(pos)
     len = s.unpack_string()
     let str = s.readStr(len)
     zz.write("\"" & str & "\"")
   of 0xc0:
     zz.write("null")
+    discard s.readChar()
   of 0xc1:
+    discard s.readChar()
     raise conversionError("stringify unused")
   of 0xc2:
     zz.write("false")
+    discard s.readChar()
   of 0xc3:
     zz.write("true")
+    discard s.readChar()
   of 0xc4..0xc6:
-    s.setPosition(pos)
     len = s.unpack_bin()
     let str = s.readStr(len)
     for cc in str:
       zz.write(toHex(ord(cc), 2))
   of 0xc7..0xc9:
-    s.setPosition(pos)
     let (exttype, extlen) = s.unpack_ext()
     discard exttype
     let str = s.readStr(extlen)
     for cc in str:
       zz.write(toHex(ord(cc), 2))
   of 0xca:
-    s.setPosition(pos)
     let f = s.unpack_imp_float32()
     zz.write($f)
   of 0xcb:
-    s.setPosition(pos)
     let f = s.unpack_imp_float64()
     zz.write($f)
   of 0xcc..0xcf:
-    s.setPosition(pos)
     let f = s.unpack_imp_uint64()
     zz.write($f)
   of 0xd0..0xd3:
-    s.setPosition(pos)
     let f = s.unpack_imp_int64()
     zz.write($f)
   of 0xd4..0xd8:
-    s.setPosition(pos)
     let (exttype, extlen) = s.unpack_ext()
     discard exttype
     let str = s.readStr(extlen)
     for cc in str:
       zz.write(toHex(ord(cc), 2))
   of 0xd9..0xdb:
-    s.setPosition(pos)
     len = s.unpack_string()
     let str = s.readStr(len)
     zz.write("\"" & str & "\"")
   of 0xdc..0xdd:
-    s.setPosition(pos)
     len = s.unpack_array()
     zz.write("[ ")
     for i in 0..len-1:
@@ -1210,7 +1206,6 @@ proc stringify(s: Stream, zz: Stream) =
       stringify(s, zz)
     zz.write(" ]")
   of 0xde..0xdf:
-    s.setPosition(pos)
     len = s.unpack_map()
     zz.write("{ ")
     for i in 0..len-1:
@@ -1221,6 +1216,7 @@ proc stringify(s: Stream, zz: Stream) =
     zz.write(" }")
   of 0xe0..0xff:
     zz.write($cast[int8](c))
+    discard s.readChar()
   else:
     raise conversionError("unknown command")
 

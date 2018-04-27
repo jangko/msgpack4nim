@@ -274,72 +274,68 @@ proc copy*(n: MsgAny): MsgAny =
       result[k.copy] = v.copy
 
 proc toAny*(s: Stream): MsgAny =
-  let pos = s.getPosition()
-  let c = ord(s.readChar)
+  let c = ord(s.peekChar)
   case c
   of 0x00..0x7f:
     result = newMsgAny(msgInt)
     result.intVal = c
+    discard s.readChar()
   of 0x80..0x8f, 0xde..0xdf:
-    s.setPosition(pos)
     let len = s.unpack_map()
     result = newMsgAny(msgMap)
     result.mapVal = initOrderedTable[MsgAny, MsgAny](nextPowerOfTwo(len))
     for i in 0..<len:
       result.mapVal[toAny(s)] = toAny(s)
   of 0x90..0x9f, 0xdc..0xdd:
-    s.setPosition(pos)
     let len = s.unpack_array()
     result = newMsgAny(msgArray)
     result.arrayVal = newSeq[MsgAny](len)
     for i in 0..<len:
       result.arrayVal[i] = toAny(s)
   of 0xa0..0xbf, 0xd9..0xdb:
-    s.setPosition(pos)
     let len = s.unpack_string()
     result = newMsgAny(msgString)
     result.stringVal = s.readStr(len)
   of 0xc0:
     result = newMsgAny(msgNull)
+    discard s.readChar()
   of 0xc1:
+    discard s.readChar()
     raise conversionError("toAny unused")
   of 0xc2:
     result = newMsgAny(msgBool)
     result.boolVal = false
+    discard s.readChar()
   of 0xc3:
     result = newMsgAny(msgBool)
     result.boolVal = true
+    discard s.readChar()
   of 0xc4..0xc6:
-    s.setPosition(pos)
     result = newMsgAny(msgBin)
     result.binLen = s.unpack_bin()
     result.binData = s.readStr(result.binLen)
   of 0xc7..0xc9, 0xd4..0xd8:
-    s.setPosition(pos)
     let (exttype, extlen) = s.unpack_ext()
     result = newMsgAny(msgExt)
     result.extLen = extlen
     result.extType = exttype.int
     result.binData = s.readStr(extlen)
   of 0xca:
-    s.setPosition(pos)
     result = newMsgAny(msgFloat32)
     result.float32Val = s.unpack_imp_float32()
   of 0xcb:
-    s.setPosition(pos)
     result = newMsgAny(msgFloat64)
     result.float64Val = s.unpack_imp_float64()
   of 0xcc..0xcf:
-    s.setPosition(pos)
     result = newMsgAny(msgUint)
     result.uintVal = s.unpack_imp_uint64()
   of 0xd0..0xd3:
-    s.setPosition(pos)
     result = newMsgAny(msgInt)
     result.intVal = s.unpack_imp_int64()
   of 0xe0..0xff:
     result = newMsgAny(msgInt)
     result.intVal = cast[int8](c).int64
+    discard s.readChar()
   else:
     raise conversionError("unknown command")
 
@@ -347,7 +343,7 @@ proc toAny*(data: string): MsgAny =
   var s = newStringStream(data)
   result = s.toAny()
 
-proc fromAny*(s: Stream, n: MsgAny) =
+proc fromAny*(s: var MsgStream, n: MsgAny) =
   case n.kind
   of msgNull:
     s.write(pack_value_nil)
@@ -380,9 +376,9 @@ proc fromAny*(s: Stream, n: MsgAny) =
       fromAny(s, v)
 
 proc fromAny*(n: MsgAny): string =
-  var s = newStringStream()
+  var s = MsgStream("")
   fromAny(s, n)
-  result = s.data
+  result = s.string
 
 proc `$`*(n: MsgAny): string =
   stringify(fromAny(n))
