@@ -1,4 +1,4 @@
-import msgpack4nim, streams, tables, math, hashes, strutils
+import msgpack4nim, tables, math, hashes, strutils
 
 type
   AnyType* = enum
@@ -273,7 +273,7 @@ proc copy*(n: MsgAny): MsgAny =
     for k, v in n:
       result[k.copy] = v.copy
 
-proc toAny*(s: Stream): MsgAny =
+proc toAny*(s: var MsgStream): MsgAny =
   let c = ord(s.peekChar)
   case c
   of 0x00..0x7f:
@@ -340,7 +340,7 @@ proc toAny*(s: Stream): MsgAny =
     raise conversionError("unknown command")
 
 proc toAny*(data: string): MsgAny =
-  var s = newStringStream(data)
+  var s = initMsgStream(data)
   result = s.toAny()
 
 proc fromAny*(s: var MsgStream, n: MsgAny) =
@@ -376,9 +376,9 @@ proc fromAny*(s: var MsgStream, n: MsgAny) =
       fromAny(s, v)
 
 proc fromAny*(n: MsgAny): string =
-  var s = MsgStream("")
+  var s = initMsgStream()
   fromAny(s, n)
-  result = s.string
+  result = s.data
 
 proc `$`*(n: MsgAny): string =
   stringify(fromAny(n))

@@ -71,10 +71,10 @@ test "float":
   check cmp(pack(-1.0'f64), "cbbff0000000000000")
 
 proc cmp_len[T](x: T, len: int, b: string): bool =
-  var s = MsgStream("")
+  var s = initMsgStream()
   s.x(len)
-  result = s.string == toBinary(b)
-  if not result: echo toHex(s.string)
+  result = s.data == toBinary(b)
+  if not result: echo toHex(s.data)
 
 proc cmp_str_len(len: int, b: string): bool =
   result = cmp_len(pack_string, len, b)
@@ -89,10 +89,10 @@ proc cmp_map_len(len: int, b: string): bool =
   result = cmp_len(pack_map, len, b)
 
 proc cmp_ext(len: int, b: string): bool =
-  var s = MsgStream("")
+  var s = initMsgStream()
   s.pack_ext(len, 1'i8)
-  result = s.string == toBinary(b)
-  if not result: echo toHex(s.string)
+  result = s.data == toBinary(b)
+  if not result: echo toHex(s.data)
 
 test "string len":
   check cmp_str_len(0, "a0")
