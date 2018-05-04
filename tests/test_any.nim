@@ -238,3 +238,19 @@ test "map copy and `in` operator":
   check anyString("abc") in b
   var c = anyArray(anyString("apple"))
   check anyString("apple") in c
+  
+test "bin and ext":
+  const extType = 0xCE'i8
+  var bin = anyBin("binary data")
+  var ext = anyExt("ext oi...", extType)
+  var arr = anyArray(bin, ext)
+  var msg = arr.fromAny()
+  
+  var a_arr = toAny(msg)
+  check a_arr[0].kind == msgBin
+  check a_arr[1].kind == msgExt
+  check a_arr[0].binData == "binary data"
+  check a_arr[1].extType == extType
+  check a_arr[1].extData == "ext oi..."
+
+  

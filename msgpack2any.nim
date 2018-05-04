@@ -17,7 +17,8 @@ type
       binLen*: int
       binData*: string
     of msgExt:
-      extLen*, extType*: int
+      extLen*: int
+      extType*: int8
       extData*: string
     of msgFloat32: float32Val*: float32
     of msgFloat64: float64Val*: float64
@@ -128,7 +129,7 @@ proc anyExt*(val: string, typ: int8): MsgAny =
   result = newMsgAny(msgExt)
   result.extData = val
   result.extLen = val.len
-  result.extType = typ.int
+  result.extType = typ
 
 proc anyString*(val: string): MsgAny =
   result = newMsgAny(msgString)
@@ -257,7 +258,7 @@ proc copy*(n: MsgAny): MsgAny =
   of msgFloat32:
     result = anyFloat(n.float32Val)
   of msgExt:
-    result = anyExt(n.extData, n.extType.int8)
+    result = anyExt(n.extData, n.extType)
   of msgBin:
     result = anyBin(n.binData)
   of msgBool:
@@ -318,8 +319,8 @@ proc toAny*(s: var MsgStream): MsgAny =
     let (exttype, extlen) = s.unpack_ext()
     result = newMsgAny(msgExt)
     result.extLen = extlen
-    result.extType = exttype.int
-    result.binData = s.readStr(extlen)
+    result.extType = exttype
+    result.extData = s.readStr(extlen)
   of 0xca:
     result = newMsgAny(msgFloat32)
     result.float32Val = s.unpack_imp_float32()

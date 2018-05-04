@@ -902,36 +902,36 @@ proc unpack_bin*(s: var MsgStream): int =
   else:
     raise conversionError("bin")
 
-proc unpack_ext*(s: var MsgStream): tuple[exttype:uint8, len: int] =
+proc unpack_ext*(s: var MsgStream): tuple[exttype: int8, len: int] =
   let c = s.readChar
   case c
   of chr(0xd4):
-    let t = uint8(s.readChar)
+    let t = cast[int8](s.readChar)
     result = (t, 1)
   of chr(0xd5):
-    let t = uint8(s.readChar)
+    let t = cast[int8](s.readChar)
     result = (t, 2)
   of chr(0xd6):
-    let t = uint8(s.readChar)
+    let t = cast[int8](s.readChar)
     result = (t, 4)
   of chr(0xd7):
-    let t = uint8(s.readChar)
+    let t = cast[int8](s.readChar)
     result = (t, 8)
   of chr(0xd8):
-    let t = uint8(s.readChar)
+    let t = cast[int8](s.readChar)
     result = (t, 16)
   else:
     if c == chr(0xc7):
       let len = ord(s.readChar)
-      let t = uint8(s.readChar)
+      let t = cast[int8](s.readChar)
       result = (t, len)
     elif c == chr(0xc8):
       let len = int(s.unstore16)
-      let t = uint8(s.readChar)
+      let t = cast[int8](s.readChar)
       result = (t, len)
     elif c == chr(0xc9):
       let len = int(s.unstore32)
-      let t = uint8(s.readChar)
+      let t = cast[int8](s.readChar)
       result = (t, len)
     else:
       raise conversionError("ext")
