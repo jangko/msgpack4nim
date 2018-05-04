@@ -30,7 +30,7 @@ const pack_value_nil* = chr(0xc0)
 type
   MsgStream* = object
     data*: string
-    pos: int
+    pos*: int
 
 proc initMsgStream*(cap: int = 0): MsgStream =
   result.data = newStringOfCap(cap)
@@ -1011,12 +1011,13 @@ proc stringify(s: var MsgStream, zz: var MsgStream) =
     discard s.readChar()
   of 0xc4..0xc6:
     len = s.unpack_bin()
+    zz.write("BIN: ")
     let str = s.readStr(len)
     for cc in str:
       zz.write(toHex(ord(cc), 2))
   of 0xc7..0xc9:
     let (exttype, extlen) = s.unpack_ext()
-    discard exttype
+    zz.write("EXT: " & toHex(exttype, 2) & " ")
     let str = s.readStr(extlen)
     for cc in str:
       zz.write(toHex(ord(cc), 2))
@@ -1034,7 +1035,7 @@ proc stringify(s: var MsgStream, zz: var MsgStream) =
     zz.write($f)
   of 0xd4..0xd8:
     let (exttype, extlen) = s.unpack_ext()
-    discard exttype
+    zz.write("EXT: " & toHex(exttype, 2) & " ")
     let str = s.readStr(extlen)
     for cc in str:
       zz.write(toHex(ord(cc), 2))
