@@ -47,7 +47,7 @@ test "negative int":
   check cmp(pack(-128), "d080")
   check cmp(pack(-32768), "d18000")
   check cmp(pack(-65536), "d2FFFF0000")
-  check cmp(pack(int64(low(int32)-1)), "D3FFFFFFFF7FFFFFFF")
+  check cmp(pack(int64(low(int32))-1), "D3FFFFFFFF7FFFFFFF")
 
 test "float":
   check cmp(pack(0.0'f32), "ca00000000")

@@ -48,7 +48,7 @@ test "negative int":
   check cmp(newJInt(-128), "d080")
   check cmp(newJInt(-32768), "d18000")
   check cmp(newJInt(-65536), "d2FFFF0000")
-  check cmp(newJInt(BiggestInt(low(int32)-1)), "D3FFFFFFFF7FFFFFFF")
+  check cmp(newJInt(BiggestInt(low(int32))-1), "D3FFFFFFFF7FFFFFFF")
 
 test "float":
   check cmp(newJFloat(0.0'f64), "cb0000000000000000")
@@ -113,11 +113,11 @@ test "ordinal 16 bit":
 
 test "ordinal 32 bit":
   let uu = [low(int32), low(int32)+1, low(int32)+2, high(int32)-1,
-    high(int32)-2, low(int8)-2, low(int8)-1, low(int8), low(int8)+1,
-    low(int8)+2, low(int16)-2, low(int16)-1, low(int16), low(int16)+1,
-    low(int16)+2, high(int8)-2, high(int8)-1, high(int8), high(int8)+1,
-    high(int8)+2, high(int16)-2, high(int16)-1, high(int16), high(int16)+1,
-    high(int16)+2,high(int32)]
+    high(int32)-2, int32(low(int8))-2, int32(low(int8))-1, low(int8), low(int8)+1,
+    low(int8)+2, int32(low(int16))-2, int32(low(int16))-1, low(int16), low(int16)+1,
+    low(int16)+2, high(int8)-2, high(int8)-1, high(int8), int32(high(int8))+1,
+    int32(high(int8))+2, high(int16)-2, high(int16)-1, high(int16), int32(high(int16))+1,
+    int32(high(int16))+2,high(int32)]
 
   let vv = [low(uint32), low(uint32)+1, low(uint32)+2, high(uint32), high(uint32)-1,
     high(uint32)-2, low(uint8), low(uint8)+1, low(uint8)+2, low(uint16)+1,
@@ -140,13 +140,13 @@ test "ordinal 32 bit":
 
 test "ordinal 64 bit":
   let uu = [high(int64), low(int32), low(int32)+1, low(int32)+2, high(int32)-1,
-    high(int32)-2, low(int8)-2, low(int8)-1, low(int8), low(int8)+1,
-    low(int8)+2, low(int16)-2, low(int16)-1, low(int16), low(int16)+1,
-    low(int16)+2, high(int8)-2, high(int8)-1, high(int8), high(int8)+1,
-    high(int8)+2, high(int16)-2, high(int16)-1, high(int16), high(int16)+1,
-    high(int16)+2,high(int32), low(int64)+1, low(int64)+2, low(int64),
+    high(int32)-2, int64(low(int8))-2, int64(low(int8))-1, low(int8), low(int8)+1,
+    low(int8)+2, int64(low(int16))-2, int64(low(int16))-1, low(int16), low(int16)+1,
+    low(int16)+2, high(int8)-2, high(int8)-1, high(int8), int64(high(int8))+1,
+    int64(high(int8))+2, high(int16)-2, high(int16)-1, high(int16), int64(high(int16))+1,
+    int64(high(int16))+2,high(int32), low(int64)+1, low(int64)+2, low(int64),
     high(int64)-1, high(int64)-2, low(int64),low(int64)+1,low(int64)+2,
-    low(int32)-1,low(int32)-2]
+    int64(low(int32))-1,int64(low(int32))-2]
 
   var s = initMsgStream()
   for i in uu: s.pack(i)

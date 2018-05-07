@@ -72,12 +72,12 @@ test "ordinal 16 bit":
       check x == i
 
 test "ordinal 32 bit":
-  var uu = [low(int32), low(int32)+1, low(int32)+2, high(int32)-1,
-    high(int32)-2, low(int8)-2, low(int8)-1, low(int8), low(int8)+1,
-    low(int8)+2, low(int16)-2, low(int16)-1, low(int16), low(int16)+1,
-    low(int16)+2, high(int8)-2, high(int8)-1, high(int8), high(int8)+1,
-    high(int8)+2, high(int16)-2, high(int16)-1, high(int16), high(int16)+1,
-    high(int16)+2,high(int32)]
+  let uu = [low(int32), low(int32)+1, low(int32)+2, high(int32)-1,
+    high(int32)-2, int32(low(int8))-2, int32(low(int8))-1, low(int8), low(int8)+1,
+    low(int8)+2, int32(low(int16))-2, int32(low(int16))-1, low(int16), low(int16)+1,
+    low(int16)+2, high(int8)-2, high(int8)-1, high(int8), int32(high(int8))+1,
+    int32(high(int8))+2, high(int16)-2, high(int16)-1, high(int16), int32(high(int16))+1,
+    int32(high(int16))+2,high(int32)]
 
   block one:
     var s = initMsgStream()
@@ -89,7 +89,7 @@ test "ordinal 32 bit":
       s.unpack(x)
       check x == i
 
-  var vv = [low(uint32), low(uint32)+1, low(uint32)+2, high(uint32), high(uint32)-1,
+  let vv = [low(uint32), low(uint32)+1, low(uint32)+2, high(uint32), high(uint32)-1,
     high(uint32)-2, low(uint8), low(uint8)+1, low(uint8)+2, low(uint16)+1,
     low(uint16)+2, high(uint8)-2, high(uint8)-1, high(uint8), high(uint8)+1,
     high(uint8)+2, high(uint16)-2, high(uint16)-1, high(uint16), high(uint16)+1,
@@ -107,14 +107,14 @@ test "ordinal 32 bit":
       check x == i
 
 test "ordinal 64 bit":
-  var uu = [high(int64), low(int32), low(int32)+1, low(int32)+2, high(int32)-1,
-    high(int32)-2, low(int8)-2, low(int8)-1, low(int8), low(int8)+1,
-    low(int8)+2, low(int16)-2, low(int16)-1, low(int16), low(int16)+1,
-    low(int16)+2, high(int8)-2, high(int8)-1, high(int8), high(int8)+1,
-    high(int8)+2, high(int16)-2, high(int16)-1, high(int16), high(int16)+1,
-    high(int16)+2,high(int32), low(int64)+1, low(int64)+2, low(int64),
+  let uu = [high(int64), low(int32), low(int32)+1, low(int32)+2, high(int32)-1,
+    high(int32)-2, int64(low(int8))-2, int64(low(int8))-1, low(int8), low(int8)+1,
+    low(int8)+2, int64(low(int16))-2, int64(low(int16))-1, low(int16), low(int16)+1,
+    low(int16)+2, high(int8)-2, high(int8)-1, high(int8), int64(high(int8))+1,
+    int64(high(int8))+2, high(int16)-2, high(int16)-1, high(int16), int64(high(int16))+1,
+    int64(high(int16))+2,high(int32), low(int64)+1, low(int64)+2, low(int64),
     high(int64)-1, high(int64)-2, low(int64),low(int64)+1,low(int64)+2,
-    low(int32)-1,low(int32)-2]
+    int64(low(int32))-1,int64(low(int32))-2]
 
   block one:
     var s = initMsgStream()
@@ -127,7 +127,7 @@ test "ordinal 64 bit":
       s.unpack(x)
       check x == i
 
-  var vv = [0xFFFFFFFFFFFFFFFFFFFFFF'u64, low(uint32), low(uint32)+1, low(uint32)+2, high(uint32), high(uint32)-1,
+  let vv = [0xFFFFFFFFFFFFFFFFFFFFFF'u64, low(uint32), low(uint32)+1, low(uint32)+2, high(uint32), high(uint32)-1,
     high(uint32)-2, low(uint8), low(uint8)+1, low(uint8)+2, low(uint16)+1,
     low(uint16)+2, high(uint8)-2, high(uint8)-1, high(uint8), high(uint8)+1,
     high(uint8)+2, high(uint16)-2, high(uint16)-1, high(uint16), high(uint16)+1,
@@ -624,18 +624,18 @@ test "distinct":
   var dd: carrier
   unpack(buf, dd)
 
-  check cc.one      == dd.one
-  check cc.two      == dd.two
-  check $cc.three    == $dd.three
-  check $cc.four     == $dd.four
-  check $cc.five     == $dd.five
-  check $cc.six      == $dd.six
-  check $cc.seven   == $dd.seven
-  check cc.eight    == dd.eight
-  check cc.nine     == dd.nine
-  check cc.ten      == dd.ten
-  check cc.eleven   == dd.eleven
-  check cc.twelve   == dd.twelve
+  check cc.one == dd.one
+  check cc.two == dd.two
+  check $cc.three == $dd.three
+  check $cc.four == $dd.four
+  check $cc.five == $dd.five
+  check $cc.six == $dd.six
+  check $cc.seven == $dd.seven
+  check cc.eight == dd.eight
+  check cc.nine == dd.nine
+  check cc.ten == dd.ten
+  check cc.eleven == dd.eleven
+  check cc.twelve == dd.twelve
   check cc.thirteen == dd.thirteen
   check $cc.fourteen == $dd.fourteen
 
