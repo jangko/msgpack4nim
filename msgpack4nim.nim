@@ -84,8 +84,9 @@ proc read*[T](s: var MsgStream, result: var T) =
 
 proc readStr*(s: var MsgStream, length: int): string =
   result = newString(length)
-  var L = s.readData(addr(result[0]), length)
-  if L != length: result.setLen(L)
+  if length != 0:
+    var L = s.readData(addr(result[0]), length)
+    if L != length: result.setLen(L)
 
 proc readChar*(s: var MsgStream): char =
   s.read(result)

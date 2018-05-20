@@ -149,13 +149,15 @@ test "string":
   var e = repeat('a', 200)
   var f = repeat('b', 3000)
   var g = repeat('c', 70000)
+  var h = ""
   var s = initMsgStream()
 
-  var dd,ee,ff,gg: string
+  var dd,ee,ff,gg,hh: string
   s.pack(d)
   s.pack(e)
   s.pack(f)
   s.pack(g)
+  s.pack(h)
 
   s.setPosition(0)
   s.unpack(dd)
@@ -163,9 +165,11 @@ test "string":
   s.unpack(ee)
   s.unpack(ff)
   s.unpack(gg)
+  s.unpack(hh)
   check ee == e
   check ff == f
   check gg == g
+  check hh == h
 
 test "float number":
   var xx = [-1.0'f32, -2.0, 0.0, Inf, NegInf, 1.0, 2.0]
