@@ -149,6 +149,15 @@ the language into `msgpack array`, but always make sure to consult the documenta
 If both of the serializer and deserializer agreed to one convention, then usually there will be no problem.
 No matter which library/language you use, you can exchange msgpack data among them.
 
+since version 0.2.4, you can set encoding mode at runtime to choose which encoding you would like to perform
+
+| mode |  msgpack_obj_to_map  |  msgpack_obj_to_array  | msgpack_obj_to_stream  | default |
+| ------------ | ------------ | ------------ | ------------ |------------ |
+| MSGPACK_OBJ_TO_DEFAULT | map  | array  |  stream | array  |
+| MSGPACK_OBJ_TO_ARRAY | array  |  array | array  | array |
+| MSGPACK_OBJ_TO_MAP |  map | map  | map  | map |
+| MSGPACK_OBJ_TO_STREAM  | stream  | stream  | stream | stream |
+
 #### **ref-types:**
 *ref something* :
 
