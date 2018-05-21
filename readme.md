@@ -36,10 +36,10 @@ proc initCustomType(): CustomType =
   result.ok = false
 
 var x = initCustomType()
-var s = MsgStream("")
+var s = initMsgStream()
 s.pack(x) #here the magic happened
 
-var ss = newStringStream(s.string)
+var ss = initMsgStream(s.data)
 var xx: CustomType
 ss.unpack(xx) #and here too
 
@@ -48,7 +48,7 @@ echo "OK ", xx.name
 ```
 see? you only need to call 'pack' and 'unpack', and the compiler do the hard work for you. Very easy, convenient, and works well
 
-if you think setting up a StringStream too much for you, you can simply call pack(yourobject) and it will return a string containing msgpack data.
+if you think setting up a MsgStream too much for you, you can simply call pack(yourobject) and it will return a string containing msgpack data.
 
 ```nimrod
   var a = @[1,2,3,4,5,6,7,8,9,0]
@@ -77,11 +77,11 @@ proc unpack_type*(s: var MsgStream, x: var mycomplexobject) =
   s.unpack(x.a)
   s.unpack(x.b)
 
-var s = MsgStream("")
+var s = initMsgStream()
 var x: mycomplexobject
 s.pack(x) #pack as usual
 
-var ss = newStringStream(s.string)
+var ss = initMsgStream(s.data)
 ss.unpack(x) #unpack as usual
 ```
 
@@ -106,15 +106,17 @@ ss.unpack(x) #unpack as usual
 | set | array | JArray |
 | range/subrange | int8/16/32/64 | JInt |
 | enum | int8/16/32/64 | JInt |
-| IntSet,Doubly/SinglyLinkedList | array | JArray |
-| Doubly/SinglyLinkedRing | array | JArray |
-| Queue,HashSet,OrderedSet | array | JArray |
-| Table,TableRef | map | JObject |
-| OrderedTable,OrderedTableRef | map | JObject |
-| StringTableRef | map | JObject |
-| CritBitTree[T] | map | JObject |
-| CritBitTree[void] | array | JArray |
+| IntSet,Doubly/SinglyLinkedList* | array | JArray |
+| Doubly/SinglyLinkedRing* | array | JArray |
+| Queue,HashSet,OrderedSet* | array | JArray |
+| Table,TableRef* | map | JObject |
+| OrderedTable,OrderedTableRef* | map | JObject |
+| StringTableRef* | map | JObject |
+| CritBitTree[T]* | map | JObject |
+| CritBitTree[void]* | array | JArray |
 | object/tuple | array/map | JObject |
+
+\(\*\) please import msgpakc4collection for Nim standard library collections, they are no longer part of codec core
 
 ## object and tuple
 
@@ -260,7 +262,7 @@ another gotcha:
 ## bin and ext format
 
 this implementation provide function to encode/decode msgpack bin/ext format header,
-but for the body, you must write it yourself or read it yourself to/from the StringStream
+but for the body, you must write it yourself or read it yourself to/from the MsgStream
 
 * proc pack_bin*(s: Stream, len: int)
 * proc pack_ext*(s: Stream, len: int, exttype: int8)
@@ -272,7 +274,7 @@ import streams, msgpack4nim
 
 const exttype0 = 0
 
-var s = MsgStream("")
+var s = initMsgStream()
 var body = "this is the body"
 
 s.pack_ext(body.len, exttype0)
@@ -282,7 +284,7 @@ s.write(body)
 s.pack_bin(body.len)
 s.write(body)
 
-var ss = newStringStream(s.string)
+var ss = initMsgStream(s.data)
 #unpack_ext return tuple[exttype:uint8, len: int]
 let (extype, extlen) = ss.unpack_ext()
 var extbody = ss.readStr(extlen)
