@@ -28,17 +28,32 @@ import endians, macros, strutils
 const pack_value_nil* = chr(0xc0)
 
 type
+  EncodingMode* = enum
+    MSGPACK_OBJ_TO_DEFAULT
+    MSGPACK_OBJ_TO_ARRAY
+    MSGPACK_OBJ_TO_MAP
+    MSGPACK_OBJ_TO_STREAM
+
   MsgStream* = object
     data*: string
     pos*: int
+    encodingMode: EncodingMode
 
-proc initMsgStream*(cap: int = 0): MsgStream =
+proc initMsgStream*(cap: int = 0, encodingMode = MSGPACK_OBJ_TO_DEFAULT): MsgStream =
   result.data = newStringOfCap(cap)
   result.pos = 0
+  result.encodingMode = encodingMode
 
-proc initMsgStream*(data: string): MsgStream =
+proc initMsgStream*(data: string, encodingMode = MSGPACK_OBJ_TO_DEFAULT): MsgStream =
   shallowCopy(result.data, data)
   result.pos = 0
+  result.encodingMode = encodingMode
+
+proc setEncodingMode*(s: var MsgStream, encodingMode: EncodingMode) =
+  s.encodingMode = encodingMode
+
+proc getEncodingMode*(s: MsgStream): EncodingMode =
+  s.encodingMode
 
 proc writeData(s: var MsgStream, buffer: pointer, bufLen: int) =
   if bufLen <= 0: return
@@ -653,18 +668,32 @@ proc pack_type*[T: tuple|object](s: var MsgStream, val: T) =
   for field in fields(val):
     inc(len)
 
-  when defined(msgpack_obj_to_map):
+  case s.encodingMode
+  of MSGPACK_OBJ_TO_ARRAY:
+    s.pack_array(len)
+    for field in fields(val):
+      s.pack_type undistinct(field)
+  of MSGPACK_OBJ_TO_MAP:
     s.pack_map(len)
     for field, value in fieldPairs(val):
       s.pack_type field
       s.pack_type undistinct(value)
-  elif defined(msgpack_obj_to_stream):
+  of MSGPACK_OBJ_TO_STREAM:
     for field in fields(val):
       s.pack_type undistinct(field)
   else:
-    s.pack_array(len)
-    for field in fields(val):
-      s.pack_type undistinct(field)
+    when defined(msgpack_obj_to_map):
+      s.pack_map(len)
+      for field, value in fieldPairs(val):
+        s.pack_type field
+        s.pack_type undistinct(value)
+    elif defined(msgpack_obj_to_stream):
+      for field in fields(val):
+        s.pack_type undistinct(field)
+    else:
+      s.pack_array(len)
+      for field in fields(val):
+        s.pack_type undistinct(field)
 
 proc pack_type*[T: ref](s: var MsgStream, val: T) =
   if isNil(val): s.pack_imp_nil()
@@ -863,7 +892,15 @@ macro unpack_proxy(n: typed): untyped =
       s.unpack `n`
 
 proc unpack_type*[T: tuple|object](s: var MsgStream, val: var T) =
-  when defined(msgpack_obj_to_map):
+  case s.encodingMode
+  of MSGPACK_OBJ_TO_ARRAY:
+    let arrayLen = s.unpack_array()
+    var len = 0
+    for field in fields(val):
+      unpack_proxy(field)
+      inc len
+    doAssert(arrayLen == len, "object/tuple len mismatch")
+  of MSGPACK_OBJ_TO_MAP:
     let len = s.unpack_map()
     var name: string
     for i in 0..len-1:
@@ -871,15 +908,28 @@ proc unpack_type*[T: tuple|object](s: var MsgStream, val: var T) =
       for field, value in fieldPairs(val):
         if field == name:
           unpack_proxy(value)
-  elif defined(msgpack_obj_to_stream):
+  of MSGPACK_OBJ_TO_STREAM:
     for field in fields(val):
       unpack_proxy(field)
   else:
-    #perhaps we need to check number of fields
-    #against array's length?
-    discard s.unpack_array()
-    for field in fields(val):
-      unpack_proxy(field)
+    when defined(msgpack_obj_to_map):
+      let len = s.unpack_map()
+      var name: string
+      for i in 0..len-1:
+        unpack_proxy(name)
+        for field, value in fieldPairs(val):
+          if field == name:
+            unpack_proxy(value)
+    elif defined(msgpack_obj_to_stream):
+      for field in fields(val):
+        unpack_proxy(field)
+    else:
+      let arrayLen = s.unpack_array()
+      var len = 0
+      for field in fields(val):
+        unpack_proxy(field)
+        inc len
+      doAssert(arrayLen == len, "object/tuple len mismatch")
 
 proc unpack_type*[T: ref](s: var MsgStream, val: var T) =
   if s.peekChar == pack_value_nil: return
