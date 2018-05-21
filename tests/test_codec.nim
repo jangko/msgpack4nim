@@ -779,3 +779,48 @@ test "bug":
   var buf = ns.pack()
   buf.unpack(os)
   check ns == os
+
+test "runtime encoding mode":
+  type
+    Fruit = object
+      color: int
+      name: string
+      taste: string
+
+  var x = Fruit(color: 15, name: "apple", taste: "sweet")
+  var y: Fruit
+
+  block encoding_mode_default:
+    var s = initMsgStream()
+    s.pack(x)
+    s.setPosition(0)
+    s.unpack(y)
+    check x == y
+
+  block encoding_mode_array:
+    var s = initMsgStream(0, MSGPACK_OBJ_TO_ARRAY)
+    s.pack(x)
+    s.setPosition(0)
+    s.unpack(y)
+    check x == y
+
+  block encoding_mode_map:
+    var s = initMsgStream(0, MSGPACK_OBJ_TO_MAP)
+    s.pack(x)
+    s.setPosition(0)
+    s.unpack(y)
+    check x == y
+
+  block encoding_mode_stream:
+    var s = initMsgStream(0, MSGPACK_OBJ_TO_STREAM)
+    s.pack(x)
+    s.setPosition(0)
+    s.unpack(y)
+    check x == y
+
+  block encoding_mode_default_default:
+    var s = initMsgStream(0, MSGPACK_OBJ_TO_DEFAULT)
+    s.pack(x)
+    s.setPosition(0)
+    s.unpack(y)
+    check x == y
