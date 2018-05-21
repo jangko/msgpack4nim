@@ -339,7 +339,7 @@ which you can interrogate of it's  type and value during runtime by accessing it
 
 for example, **msg** is a *msgpack* data with content [1, "hello", {"a": "b"}], you can interrogate it like this:
 
-```nimrod
+```nim
 var a = msg.toAny()
 assert a.kind == msgArray
 assert a.arrayVal[0].kind == msgInt
@@ -353,6 +353,13 @@ assert c[anyString("a")] == anyString("b")
 
 since version 0.2.1, toAny was put into separate module `msgpack2any`,
 it has functionality similar with json, with support of msgpack bin and ext natively
+
+msgpack2any also support pretty printing similar with json pretty printing.
+
+Primary usage for msgpack2any is to provide higher level API while dynamically querying underlying msgpack data at runtime.
+Currently, msgpack2any decode all msgpack stream at once. There are room for improvements such as progressive decoding at
+runtime, or selective decoding at runtime. Both of this improvements are not implemented, yet they are important for applications
+that need for finer control over decoding step.
 
 ## JSON
 
