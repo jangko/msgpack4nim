@@ -14,7 +14,7 @@ I found out nim compiler is smart enough to make serialization/deserialization t
 
 ## Example
 
-```nimrod
+```Nim
 import msgpack4nim, streams
 
 type
@@ -36,10 +36,10 @@ proc initCustomType(): CustomType =
   result.ok = false
 
 var x = initCustomType()
-var s = initMsgStream()
+var s = MsgStream.init() # besides MsgStream, you can also use Nim StringStream or FileStream
 s.pack(x) #here the magic happened
 
-var ss = initMsgStream(s.data)
+var ss = MsgStream.init(s.data)
 var xx: CustomType
 ss.unpack(xx) #and here too
 
@@ -50,7 +50,7 @@ see? you only need to call 'pack' and 'unpack', and the compiler do the hard wor
 
 if you think setting up a MsgStream too much for you, you can simply call pack(yourobject) and it will return a string containing msgpack data.
 
-```nimrod
+```Nim
   var a = @[1,2,3,4,5,6,7,8,9,0]
   var buf = pack(a)
   var aa: seq[int]
@@ -60,28 +60,30 @@ if you think setting up a MsgStream too much for you, you can simply call pack(y
 
 in case the compiler cannot decide how to serialize or deserialize your very very complex object, you can help it in easy way
 by defining your own handler pack_type/unpack_type
-```nimrod
+```Nim
 type
   #not really complex, just for example
   mycomplexobject = object
     a: someSimpleType
     b: someSimpleType
 
-#help the compiler to decide
-proc pack_type*(s: var MsgStream, x: mycomplexobject) =
+# help the compiler to decide
+# ByteStream is any Stream Compatible object such as MsgStream, FileStream, StringStream
+proc pack_type*[ByteStream](s: ByteStream, x: mycomplexobject) =
   s.pack(x.a) # let the compiler decide
   s.pack(x.b) # let the compiler decide
 
-#help the compiler to decide
-proc unpack_type*(s: var MsgStream, x: var mycomplexobject) =
+# help the compiler to decide
+# ByteStream is any Stream Compatible object
+proc unpack_type*[ByteStream](s: ByteStream, x: var mycomplexobject) =
   s.unpack(x.a)
   s.unpack(x.b)
 
-var s = initMsgStream()
+var s = MsgStream.init() # besides MsgStream, you can also use Nim StringStream or FileStream
 var x: mycomplexobject
 s.pack(x) #pack as usual
 
-var ss = initMsgStream(s.data)
+var ss = MsgStream.init(s.data)
 ss.unpack(x) #unpack as usual
 ```
 
@@ -151,6 +153,8 @@ No matter which library/language you use, you can exchange msgpack data among th
 
 since version 0.2.4, you can set encoding mode at runtime to choose which encoding you would like to perform
 
+note: the runtime encoding mode only available if you use MsgStream, otherwise only compile time flag available
+
 | mode |  msgpack_obj_to_map  |  msgpack_obj_to_array  | msgpack_obj_to_stream  | default |
 | ------------ | ------------ | ------------ | ------------ |------------ |
 | MSGPACK_OBJ_TO_DEFAULT | map  | array  |  stream | array  |
@@ -176,7 +180,7 @@ If you pack something contains circular reference, you know something bad will h
 For objects their type is **not** serialized.
 This means essentially that it does not work if the object has some other runtime type than its compiletime type:
 
-```nimrod
+```Nim
 import streams, msgpack4nim
 
 type
@@ -213,7 +217,7 @@ however, you can provide your own handler for cstring and pointer
 because data conversion did not preserve original data types(only partial preservation),
 the following code is perfectly valid and will raise no exception
 
-```nimrod
+```Nim
 import msgpack4nim, streams, tables, sets, strtabs
 
 type
@@ -248,7 +252,7 @@ echo "traits: ", $tom.traits
 
 another gotcha:
 
-```nimrod
+```Nim
   type
     KAB = object of RootObj
       aaa: int
@@ -278,12 +282,12 @@ but for the body, you must write it yourself or read it yourself to/from the Msg
 * proc unpack_bin*(s: Stream): int
 * proc unpack_ext*(s: Stream): tuple[exttype:uint8, len: int]
 
-```nimrod
+```Nim
 import streams, msgpack4nim
 
 const exttype0 = 0
 
-var s = initMsgStream()
+var s = MsgStream.init()
 var body = "this is the body"
 
 s.pack_ext(body.len, exttype0)
@@ -293,7 +297,7 @@ s.write(body)
 s.pack_bin(body.len)
 s.write(body)
 
-var ss = initMsgStream(s.data)
+var ss = MsgStream.init(s.data)
 #unpack_ext return tuple[exttype:uint8, len: int]
 let (extype, extlen) = ss.unpack_ext()
 var extbody = ss.readStr(extlen)
@@ -310,7 +314,7 @@ assert binbody == body
 
 you can convert msgpack data to readable string using stringify function
 
-```nimrod
+```Nim
   type
     Horse = object
       legs: int

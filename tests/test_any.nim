@@ -3,7 +3,7 @@ import msgpack4collection
 
 test "any":
   # [1, "hello", {"a": "b"}]
-  var s = initMsgStream()
+  var s = MsgStream.init()
   s.pack_array(3)
   s.pack(1)
   s.pack("hello")
@@ -87,7 +87,7 @@ test "string":
   check cmp(anyString("OK"), "a24f4b")
 
 test "ordinal 8 bit":
-  var s = initMsgStream()
+  var s = MsgStream.init()
   for i in low(char)..high(char): s.pack(i)
   for i in low(int8)..high(int8): s.pack(i)
   for i in low(uint8)..high(uint8): s.pack(i)
@@ -116,7 +116,7 @@ test "ordinal 8 bit":
 
 test "ordinal 16 bit":
   block one:
-    var s = initMsgStream()
+    var s = MsgStream.init()
     for i in low(int16)..high(int16): s.pack(i)
     s.setPosition(0)
     for i in low(int16)..high(int16):
@@ -127,7 +127,7 @@ test "ordinal 16 bit":
         check x.uintVal == i.uint64
 
   block two:
-    var s = initMsgStream()
+    var s = MsgStream.init()
     for i in low(uint16)..high(uint16): s.pack(i)
     s.setPosition(0)
     for i in low(uint16)..high(uint16):
@@ -151,7 +151,7 @@ test "ordinal 32 bit":
     high(uint8)+2, high(uint16)-2, high(uint16)-1, high(uint16), high(uint16)+1,
     high(uint16)+2]
 
-  var s = initMsgStream()
+  var s = MsgStream.init()
 
   for i in uu: s.pack(i)
   for i in vv: s.pack(i)
@@ -182,7 +182,7 @@ test "ordinal 64 bit":
     high(int64)-1, high(int64)-2, low(int64),low(int64)+1,low(int64)+2,
     int64(low(int32))-1,int64(low(int32))-2]
 
-  var s = initMsgStream()
+  var s = MsgStream.init()
   for i in uu: s.pack(i)
   s.setPosition(0)
 
@@ -199,7 +199,7 @@ test "string":
     repeat('b', 3000),
     repeat('c', 70000)]
 
-  var s = initMsgStream()
+  var s = MsgStream.init()
 
   for i in vv: s.pack(i)
 
@@ -212,7 +212,7 @@ test "float number":
   let xx = [-1.0'f32, -2.0, 0.0, Inf, NegInf, 1.0, 2.0]
   let vv = [-1.0'f64, -2.0, 0.0, Inf, NegInf, 1.0, 2.0]
 
-  var s = initMsgStream()
+  var s = MsgStream.init()
   for i in xx: s.pack(i)
   for i in vv: s.pack(i)
 

@@ -20,7 +20,7 @@ proc hash*(c: Choco): Hash =
 
 test "ordinal 8 bit":
   var
-    s = initMsgStream()
+    s = MsgStream.init()
     a = true
     b = false
 
@@ -54,7 +54,7 @@ test "ordinal 8 bit":
 
 test "ordinal 16 bit":
   block one:
-    var s = initMsgStream()
+    var s = MsgStream.init()
     for i in low(int16)..high(int16): s.pack(i)
     s.setPosition(0)
     var x: int16
@@ -63,7 +63,7 @@ test "ordinal 16 bit":
       check x == i
 
   block two:
-    var s = initMsgStream()
+    var s = MsgStream.init()
     for i in low(uint16)..high(uint16): s.pack(i)
     s.setPosition(0)
     var x: uint16
@@ -80,7 +80,7 @@ test "ordinal 32 bit":
     int32(high(int16))+2,high(int32)]
 
   block one:
-    var s = initMsgStream()
+    var s = MsgStream.init()
     var x: int32
     for i in uu: s.pack(i)
 
@@ -96,7 +96,7 @@ test "ordinal 32 bit":
     high(uint16)+2]
 
   block two:
-    var s = initMsgStream()
+    var s = MsgStream.init()
     var x: uint32
 
     for i in vv: s.pack(i)
@@ -117,7 +117,7 @@ test "ordinal 64 bit":
     int64(low(int32))-1,int64(low(int32))-2]
 
   block one:
-    var s = initMsgStream()
+    var s = MsgStream.init()
     var x: int64
 
     for i in uu: s.pack(i)
@@ -134,7 +134,7 @@ test "ordinal 64 bit":
     high(uint16)+2, 0xFFFFFFFFFFFFFFFFFFFFFF'u64-1, 0xFFFFFFFFFFFFFFFFFFFFFF'u64-2]
 
   block two:
-    var s = initMsgStream()
+    var s = MsgStream.init()
     var x: uint64
 
     for i in vv: s.pack(i)
@@ -150,7 +150,7 @@ test "string":
   var f = repeat('b', 3000)
   var g = repeat('c', 70000)
   var h = ""
-  var s = initMsgStream()
+  var s = MsgStream.init()
 
   var dd,ee,ff,gg,hh: string
   s.pack(d)
@@ -175,7 +175,7 @@ test "float number":
   var xx = [-1.0'f32, -2.0, 0.0, Inf, NegInf, 1.0, 2.0]
 
   block one:
-    var s = initMsgStream()
+    var s = MsgStream.init()
     var x: float32
     for i in xx: s.pack(i)
 
@@ -187,7 +187,7 @@ test "float number":
   var vv = [-1.0'f64, -2.0, 0.0, Inf, NegInf, 1.0, 2.0]
 
   block two:
-    var s = initMsgStream()
+    var s = MsgStream.init()
     var x: float64
     for i in vv: s.pack(i)
 
@@ -220,7 +220,7 @@ test "set":
   z.incl(ssbottom)
   z.incl(ssright)
 
-  var s = initMsgStream()
+  var s = MsgStream.init()
   s.pack(x)
   s.pack(y)
   s.pack(a)
@@ -308,7 +308,7 @@ test "container":
   k.incl("hello")
   k.incl("world")
 
-  var s = initMsgStream()
+  var s = MsgStream.init()
   s.pack(a)
   s.pack(b)
   s.pack(c)
@@ -367,7 +367,7 @@ test "map":
     for k,v in pairs(b): yy.add((k,v))
     result = xx == yy
 
-  var s = initMsgStream()
+  var s = MsgStream.init()
   var a = initTable[string, Choco]()
   var b = newTable[string, Choco]()
   var c = initOrderedTable[string, Choco]()
@@ -420,7 +420,7 @@ test "map":
   check ff.equal f
 
 test "array":
-  var s = initMsgStream()
+  var s = MsgStream.init()
   var a = [0, 1, 2, 3]
   var b = ["a", "abc", "def"]
   var c = @[0, 1, 2, 3]
@@ -455,7 +455,7 @@ test "tuple":
       def: string
       ghi: float
 
-  var s = initMsgStream()
+  var s = MsgStream.init()
   var a: ttt = ("hello", -1, 1, 1.0)
   var b = www(abc:1, def: "hello", ghi: 1.0)
 
@@ -502,7 +502,7 @@ test "ref type":
   new(refint)
   refint[] = 45
 
-  var s = initMsgStream()
+  var s = MsgStream.init()
   s.pack(refint)
 
   var buf = pack(refint)
@@ -723,7 +723,7 @@ test "weapon":
 test "bin/ext":
   const exttype0 = 0
 
-  var s = initMsgStream()
+  var s = MsgStream.init()
   var body = "this is the body"
 
   s.pack_ext(body.len, exttype0)
@@ -795,35 +795,42 @@ test "runtime encoding mode":
   var y: Fruit
 
   block encoding_mode_default:
-    var s = initMsgStream()
+    var s = MsgStream.init()
     s.pack(x)
     s.setPosition(0)
     s.unpack(y)
     check x == y
 
   block encoding_mode_array:
-    var s = initMsgStream(0, MSGPACK_OBJ_TO_ARRAY)
+    var s = MsgStream.init(0, MSGPACK_OBJ_TO_ARRAY)
     s.pack(x)
     s.setPosition(0)
     s.unpack(y)
     check x == y
 
   block encoding_mode_map:
-    var s = initMsgStream(0, MSGPACK_OBJ_TO_MAP)
+    var s = MsgStream.init(0, MSGPACK_OBJ_TO_MAP)
     s.pack(x)
     s.setPosition(0)
     s.unpack(y)
     check x == y
 
   block encoding_mode_stream:
-    var s = initMsgStream(0, MSGPACK_OBJ_TO_STREAM)
+    var s = MsgStream.init(0, MSGPACK_OBJ_TO_STREAM)
     s.pack(x)
     s.setPosition(0)
     s.unpack(y)
     check x == y
 
   block encoding_mode_default_default:
-    var s = initMsgStream(0, MSGPACK_OBJ_TO_DEFAULT)
+    var s = MsgStream.init(0, MSGPACK_OBJ_TO_DEFAULT)
+    s.pack(x)
+    s.setPosition(0)
+    s.unpack(y)
+    check x == y
+
+  block nim_standard_stream:
+    var s = newStringStream()
     s.pack(x)
     s.setPosition(0)
     s.unpack(y)
