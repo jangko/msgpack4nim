@@ -277,10 +277,10 @@ another gotcha:
 this implementation provide function to encode/decode msgpack bin/ext format header,
 but for the body, you must write it yourself or read it yourself to/from the MsgStream
 
-* proc pack_bin*(s: Stream, len: int)
-* proc pack_ext*(s: Stream, len: int, exttype: int8)
-* proc unpack_bin*(s: Stream): int
-* proc unpack_ext*(s: Stream): tuple[exttype:uint8, len: int]
+* proc pack_bin*[ByteStream](s: ByteStream, len: int)
+* proc pack_ext*[ByteStream](s: ByteStream, len: int, exttype: int8)
+* proc unpack_bin*[ByteStream](s: ByteStream): int
+* proc unpack_ext*[ByteStream](s: ByteStream): tuple[exttype:uint8, len: int]
 
 ```Nim
 import streams, msgpack4nim
@@ -342,7 +342,7 @@ msgpack_obj_to_stream defined:
 
 ## toAny
 **toAny** takes a string of msgpack data or a stream, then it will produce **msgAny**
-which you can interrogate of it's  type and value during runtime by accessing it's member **msgType**
+which you can interrogate of it's  type and value during runtime by accessing it's member **kind**
 
 **toAny** recognize all valid msgpack message and translate it into a group of types:
 
@@ -394,7 +394,7 @@ However, if msgpack4nim received encoded streams from other msgpack library cont
 it conforms to the spec, msgpack4nim will happily decoded it and convert it to the destination storage(variable) type.
 
 Other msgpack library who consume msgpack4nim stream, will also decode it properly, although they might not produce smallest number
-of bytes required, such situation is common in dynamically typed language msgpack library.
+of bytes required.
 
 enjoy it, happy nim-ing
 
