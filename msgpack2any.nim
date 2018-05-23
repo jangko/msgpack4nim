@@ -274,7 +274,7 @@ proc copy*(n: MsgAny): MsgAny =
     for k, v in n:
       result[k.copy] = v.copy
 
-proc toAny*(s: var MsgStream): MsgAny =
+proc toAny*[ByteStream](s: ByteStream): MsgAny =
   let c = ord(s.peekChar)
   case c
   of 0x00..0x7f:
@@ -341,10 +341,10 @@ proc toAny*(s: var MsgStream): MsgAny =
     raise conversionError("unknown command")
 
 proc toAny*(data: string): MsgAny =
-  var s = initMsgStream(data)
+  var s = MsgStream.init(data)
   result = s.toAny()
 
-proc fromAny*(s: var MsgStream, n: MsgAny) =
+proc fromAny*[ByteStream](s: ByteStream, n: MsgAny) =
   case n.kind
   of msgNull:
     s.write(pack_value_nil)
@@ -377,7 +377,7 @@ proc fromAny*(s: var MsgStream, n: MsgAny) =
       fromAny(s, v)
 
 proc fromAny*(n: MsgAny): string =
-  var s = initMsgStream()
+  var s = MsgStream.init()
   fromAny(s, n)
   result = s.data
 

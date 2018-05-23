@@ -1,6 +1,6 @@
 import msgpack4nim, json, tables, math, base64
 
-proc toJsonNode*(s: var MsgStream): JsonNode =
+proc toJsonNode*[ByteStream](s: ByteStream): JsonNode =
   let c = ord(s.peekChar)
   case c
   of 0x00..0x7f:
@@ -67,10 +67,10 @@ proc toJsonNode*(s: var MsgStream): JsonNode =
     raise conversionError("unknown command")
 
 proc toJsonNode*(data: string): JsonNode =
-  var s = initMsgStream(data)
+  var s = MsgStream.init(data)
   result = s.toJsonNode()
 
-proc fromJsonNode*(s: var MsgStream, n: JsonNode) =
+proc fromJsonNode*[ByteStream](s: ByteStream, n: JsonNode) =
   case n.kind
   of JNull:
     s.write(pack_value_nil)
@@ -93,6 +93,6 @@ proc fromJsonNode*(s: var MsgStream, n: JsonNode) =
       fromJsonNode(s, c)
 
 proc fromJsonNode*(n: JsonNode): string =
-  var s = initMsgStream()
+  var s = MsgStream.init()
   fromJsonNode(s, n)
   result = s.data
