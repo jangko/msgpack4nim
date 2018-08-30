@@ -778,7 +778,10 @@ test "bug":
       b: string
       c: seq[int]
 
-  let ns = NilString(a: 10, b: nil, c: nil)
+  when compiles(isNil(string(nil))):
+    let ns = NilString(a: 10, b: nil, c: nil)
+  else:
+    let ns = NilString(a: 10, b: "", c: @[])
   var os: NilString
   var buf = ns.pack()
   buf.unpack(os)

@@ -560,7 +560,11 @@ proc pack_type*[ByteStream](s: ByteStream, val: char) =
   s.pack_imp_uint8(uint8(val))
 
 proc pack_type*[ByteStream](s: ByteStream, val: string) =
-  if isNil(val): s.pack_imp_nil()
+  when compiles(isNil(val)):
+    if isNil(val): s.pack_imp_nil()
+    else:
+      s.pack_string(val.len)
+      s.write(val)
   else:
     s.pack_string(val.len)
     s.write(val)
@@ -664,7 +668,11 @@ proc pack_type*[ByteStream, T](s: ByteStream, val: openArray[T]) =
   for i in 0..val.len-1: s.pack_type undistinct(val[i])
 
 proc pack_type*[ByteStream, T](s: ByteStream, val: seq[T]) =
-  if isNil(val): s.pack_imp_nil()
+  when compiles(isNil(val)):
+    if isNil(val): s.pack_imp_nil()
+    else:
+      s.pack_array(val.len)
+      for i in 0..val.len-1: s.pack_type undistinct(val[i])
   else:
     s.pack_array(val.len)
     for i in 0..val.len-1: s.pack_type undistinct(val[i])
@@ -746,9 +754,14 @@ proc unpack_string*[ByteStream](s: ByteStream): int =
     result = int(s.unstore32())
 
 proc unpack_type*[ByteStream](s: ByteStream, val: var string) =
-  if s.peekChar == pack_value_nil:
-    val = nil
-    return
+  when compiles(isNil(val)):
+    if s.peekChar == pack_value_nil:
+      val = nil
+      return
+  else:
+    if s.peekChar == pack_value_nil:
+      val = ""
+      return
 
   let len = s.unpack_string()
   if len < 0: raise conversionError("string")
@@ -868,10 +881,15 @@ proc unpack_map*[ByteStream](s: ByteStream): int =
     result = int(s.unstore32())
 
 proc unpack_type*[ByteStream, T](s: ByteStream, val: var seq[T]) =
-  if s.peekChar == pack_value_nil:
-    val = nil
-    return
-
+  when compiles(isNil(val)):
+    if s.peekChar == pack_value_nil:
+      val = nil
+      return
+  else:
+    if s.peekChar == pack_value_nil:
+      val = @[]
+      return
+      
   let len = s.unpack_array()
   if len < 0: raise conversionError("sequence")
   var x:T

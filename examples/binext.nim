@@ -1,4 +1,4 @@
-import streams, msgpack
+import streams, msgpack4nim
 
 const exttype0 = 0
 
