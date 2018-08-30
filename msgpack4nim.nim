@@ -22,6 +22,9 @@
 #
 #
 #-------------------------------------
+when not declared SomeFloat:
+  type
+    SomeFloat = SomeReal
 
 import endians, macros, strutils, streams
 
