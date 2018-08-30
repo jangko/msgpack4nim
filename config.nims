@@ -32,4 +32,4 @@ task examplesTests, "Run example test":
   --r
   --verbosity:0
   --path:"."
-  setCommand "c", "example/test"
+  setCommand "c", "examples/test"
