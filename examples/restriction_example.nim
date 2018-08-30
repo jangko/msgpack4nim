@@ -1,4 +1,4 @@
-import streams, msgpack
+import streams, msgpack4nim
 
 type
   TA = object of RootObj

@@ -15,7 +15,7 @@ task codecTests, "Run codec test":
   --verbosity:0
   --path:"."
   setCommand "c", "tests/test_codec"
-  
+
 task jsonTests, "Run json test":
   --r
   --verbosity:0
@@ -27,3 +27,9 @@ task anyTests, "Run any test":
   --verbosity:0
   --path:"."
   setCommand "c", "tests/test_any"
+
+task examplesTests, "Run example test":
+  --r
+  --verbosity:0
+  --path:"."
+  setCommand "c", "example/test"

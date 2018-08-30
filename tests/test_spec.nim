@@ -28,7 +28,8 @@ proc cmp(a, b: string): bool =
 test "bool & nil":
   check cmp(pack(false), "c2")
   check cmp(pack(true), "c3")
-  check cmp(pack(string(nil)), "c0")
+  when compiles(isNil(string(nil))):
+    check cmp(pack(string(nil)), "c0")
 
 test "positive int":
   check cmp(pack(0), "00")

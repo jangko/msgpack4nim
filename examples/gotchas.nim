@@ -1,16 +1,16 @@
-import msgpack, streams, tables, sets, strtabs
+import msgpack4nim, streams, tables, sets, strtabs, msgpack4collection
 
 type
   Horse = object
     legs: int
     foals: seq[string]
     attr: Table[string, string]
-    
+
   Cat = object
     legs: uint8
     kittens: HashSet[string]
     traits: StringTableRef
-    
+
 proc initHorse(): Horse =
   result.legs = 4
   result.foals = @["jilly", "colt"]

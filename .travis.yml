@@ -35,6 +35,7 @@ script:
     - nim codecTests
     - nim jsonTests
     - nim anyTests
+    - nim examplesTests
 cache:
   directories:
     - nim-devel
