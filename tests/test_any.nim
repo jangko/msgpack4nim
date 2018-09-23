@@ -61,7 +61,7 @@ test "positive int":
   check cmp(anyUInt(255), "ccff")
   check cmp(anyUInt(256), "cd0100")
   check cmp(anyUInt(65535), "cdffff")
-  check cmp(anyUInt(uint64(high(uint32) + 1)), "CF0000000100000000")
+  check cmp(anyUInt(uint64(high(uint32)) + 1), "CF0000000100000000")
 
 test "negative int":
   check cmp(anyInt(-1), "FF")

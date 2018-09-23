@@ -40,7 +40,7 @@ test "positive int":
   check cmp(pack(255), "ccff")
   check cmp(pack(256), "cd0100")
   check cmp(pack(65535), "cdffff")
-  check cmp(pack(uint64(high(uint32) + 1)), "CF0000000100000000")
+  check cmp(pack(uint64(high(uint32)) + 1), "CF0000000100000000")
 
 test "negative int":
   check cmp(pack(-1), "FF")

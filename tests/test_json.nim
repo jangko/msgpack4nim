@@ -40,7 +40,7 @@ test "positive int":
   check cmp(newJInt(255), "ccff")
   check cmp(newJInt(256), "cd0100")
   check cmp(newJInt(65535), "cdffff")
-  check cmp(newJInt(BiggestInT(high(uint32) + 1)), "CF0000000100000000")
+  check cmp(newJInt(BiggestInT(high(uint32)) + 1), "CF0000000100000000")
 
 test "negative int":
   check cmp(newJInt(-1), "FF")
