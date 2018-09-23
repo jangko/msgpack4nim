@@ -40,7 +40,7 @@ proc toBinary(s: string): string =
 proc toHex*(s: string): string =
   result = newStringOfCap(s.len * 2)
   for c in s:
-    result.add toHex(c)
+    result.add toHex(c.ord)
 
 proc cmp(a: MsgAny, b: string): bool =
   let msg = fromAny(a)
@@ -252,4 +252,3 @@ test "bin and ext":
   check a_arr[0].binData == "binary data"
   check a_arr[1].extType == extType
   check a_arr[1].extData == "ext oi..."
-

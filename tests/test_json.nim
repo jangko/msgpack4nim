@@ -19,7 +19,7 @@ proc toBinary(s: string): string =
 proc toHex*(s: string): string =
   result = newStringOfCap(s.len * 2)
   for c in s:
-    result.add toHex(c)
+    result.add toHex(c.ord)
 
 proc cmp(a: JsonNode, b: string): bool =
   let msg = fromJsonNode(a)
