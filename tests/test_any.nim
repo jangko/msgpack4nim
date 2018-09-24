@@ -40,7 +40,7 @@ proc toBinary(s: string): string =
 proc toHex*(s: string): string =
   result = newStringOfCap(s.len * 2)
   for c in s:
-    result.add toHex(c)
+    result.add toHex(c.ord)
 
 proc cmp(a: MsgAny, b: string): bool =
   let msg = fromAny(a)
@@ -61,7 +61,7 @@ test "positive int":
   check cmp(anyUInt(255), "ccff")
   check cmp(anyUInt(256), "cd0100")
   check cmp(anyUInt(65535), "cdffff")
-  check cmp(anyUInt(uint64(high(uint32) + 1)), "CF0000000100000000")
+  check cmp(anyUInt(uint64(high(uint32)) + 1), "CF0000000100000000")
 
 test "negative int":
   check cmp(anyInt(-1), "FF")
@@ -252,4 +252,3 @@ test "bin and ext":
   check a_arr[0].binData == "binary data"
   check a_arr[1].extType == extType
   check a_arr[1].extData == "ext oi..."
-

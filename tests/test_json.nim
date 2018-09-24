@@ -19,7 +19,7 @@ proc toBinary(s: string): string =
 proc toHex*(s: string): string =
   result = newStringOfCap(s.len * 2)
   for c in s:
-    result.add toHex(c)
+    result.add toHex(c.ord)
 
 proc cmp(a: JsonNode, b: string): bool =
   let msg = fromJsonNode(a)
@@ -40,7 +40,7 @@ test "positive int":
   check cmp(newJInt(255), "ccff")
   check cmp(newJInt(256), "cd0100")
   check cmp(newJInt(65535), "cdffff")
-  check cmp(newJInt(BiggestInT(high(uint32) + 1)), "CF0000000100000000")
+  check cmp(newJInt(BiggestInT(high(uint32)) + 1), "CF0000000100000000")
 
 test "negative int":
   check cmp(newJInt(-1), "FF")
