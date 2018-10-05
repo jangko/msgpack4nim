@@ -40,7 +40,8 @@ test "positive int":
   check cmp(newJInt(255), "ccff")
   check cmp(newJInt(256), "cd0100")
   check cmp(newJInt(65535), "cdffff")
-  check cmp(newJInt(BiggestInT(high(uint32)) + 1), "CF0000000100000000")
+  when defined(cpu64):
+    check cmp(newJInt(BiggestInT(high(uint32)) + 1), "CF0000000100000000")
 
 test "negative int":
   check cmp(newJInt(-1), "FF")
@@ -48,7 +49,8 @@ test "negative int":
   check cmp(newJInt(-128), "d080")
   check cmp(newJInt(-32768), "d18000")
   check cmp(newJInt(-65536), "d2FFFF0000")
-  check cmp(newJInt(BiggestInt(low(int32))-1), "D3FFFFFFFF7FFFFFFF")
+  when defined(cpu64):
+    check cmp(newJInt(BiggestInt(low(int32))-1), "D3FFFFFFFF7FFFFFFF")
 
 test "float":
   check cmp(newJFloat(0.0'f64), "cb0000000000000000")
@@ -136,6 +138,8 @@ test "ordinal 32 bit":
 
   for i in vv:
     let x = s.toJsonNode()
+    when not defined(cpu64):
+      if x.num > high(int32).BiggestInt or x.num < low(int32).BiggestInt: continue
     check x.getInt() == i.int
 
 test "ordinal 64 bit":
@@ -154,6 +158,8 @@ test "ordinal 64 bit":
   s.setPosition(0)
   for i in uu:
     let x = s.toJsonNode()
+    when not defined(cpu64):
+      if x.num > high(int32).BiggestInt or x.num < low(int32).BiggestInt: continue
     check x.getInt() == i.int
 
 test "string":
