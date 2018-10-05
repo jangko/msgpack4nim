@@ -140,7 +140,10 @@ test "ext len":
   check cmp_ext(256, "c8010001")
   check cmp_ext(65536, "c90001000001")
 
-const coverage = [2^5, -2^5, 2^11, -2^11, 2^21, -2^21, 2^51, -2^51, 2^61, -2^61]
+when defined(cpu64):
+  const coverage = [2^5, -2^5, 2^11, -2^11, 2^21, -2^21, 2^51, -2^51, 2^61, -2^61]
+else:
+  const coverage = [2^5, -2^5, 2^11, -2^11, 2^21, -2^21]
 
 test "coverage":
   var m: int64
@@ -179,11 +182,12 @@ test "spec len":
   for n in 2^16..2^16+100:
     nb_test(n, 5)
 
-  for n in 2^32-101..2^32-1:
-    nb_test(n, 5)
+  when defined(cpu64):
+    for n in 2^32-101..2^32-1:
+      nb_test(n, 5)
 
-  for n in 2^32..2^32+100:
-    nb_test(n, 9)
+    for n in 2^32..2^32+100:
+      nb_test(n, 9)
 
   for n in countdown(-1,-32):
     nb_test(n, 1)
@@ -197,11 +201,12 @@ test "spec len":
   for n in countdown(-2^15-1,-2^15-101):
     nb_test(n, 5)
 
-  for n in countdown(-2^31+100,-2^31):
-    nb_test(n, 5)
+  when defined(cpu64):
+    for n in countdown(-2^31+100,-2^31):
+      nb_test(n, 5)
 
-  for n in countdown(-2^31-1,-2^31-101):
-    nb_test(n, 9)
+    for n in countdown(-2^31-1,-2^31-101):
+      nb_test(n, 9)
 
   randomize()
   for i in 1..100:

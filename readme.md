@@ -10,7 +10,10 @@ I found out nim compiler is smart enough to make serialization/deserialization t
 
 **requirement:** nim ver 0.18.1 or later
 
-[![Build Status][badge-msgpack4nim-travisci]][msgpack4nim-travisci]
+[![Build Status (Travis)](https://img.shields.io/travis/jangko/msgpack4nim/master.svg?label=Linux%20/%20macOS "Linux/macOS build status (Travis)")](https://travis-ci.org/jangko/msgpack4nim)
+[![Windows build status (Appveyor)](https://img.shields.io/appveyor/ci/jangko/msgpack4nim/master.svg?label=Windows "Windows build status (Appveyor)")](https://ci.appveyor.com/project/jangko/msgpack4nim)
+![nimble](https://img.shields.io/badge/available%20on-nimble-yellow.svg?style=flat-square)
+![license](https://img.shields.io/github/license/citycide/cascade.svg?style=flat-square)
 
 ## Example
 
@@ -397,6 +400,3 @@ Other msgpack library who consume msgpack4nim stream, will also decode it proper
 of bytes required.
 
 enjoy it, happy nim-ing
-
-[msgpack4nim-travisci]: https://travis-ci.org/jangko/msgpack4nim
-[badge-msgpack4nim-travisci]: https://travis-ci.org/jangko/msgpack4nim.svg?branch=master

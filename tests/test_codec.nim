@@ -760,16 +760,16 @@ type
 test "bug":
   # bug 13
   var x = abc(a: -557853050, b : 0)
-  var y = abc(a: int(-5578530500), b : 0)
   pack_unpack_test(x)
-  pack_unpack_test(y)
-
   pack_unpack_test((-557853050, 0))
-  pack_unpack_test((-5578530500, 0))
-
   pack_unpack_test((0, -557853050, 0))
-  pack_unpack_test((0, -5578530500, 0))
-  pack_unpack_test((0, -5578530500, 0, 0))
+
+  when defined(cpu64):
+    var y = abc(a: int(-5578530500), b : 0)
+    pack_unpack_test(y)
+    pack_unpack_test((-5578530500, 0))
+    pack_unpack_test((0, -5578530500, 0))
+    pack_unpack_test((0, -5578530500, 0, 0))
 
   # bug 14
   type
