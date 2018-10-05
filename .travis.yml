@@ -31,11 +31,7 @@ install:
 before_script:
     - export PATH="nim-$BRANCH/bin${PATH:+:$PATH}"
 script:
-    - nim specTests
-    - nim codecTests
-    - nim jsonTests
-    - nim anyTests
-    - nim examplesTests
+  -nimble test
 cache:
   directories:
     - nim-devel
