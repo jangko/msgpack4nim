@@ -382,6 +382,9 @@ that need for finer control over decoding step.
 Start version 0.2.0, msgpack4nim receive additional family member, `msgpack2json` module.
 It consists of `toJsonNode` and `fromJsonNode` to interact with stdlib's json module.
 
+## Installation via nimble
+> nimble install msgpack4nim
+
 ## Implementation specific
 
 > If an object can be represented in multiple possible output formats,
