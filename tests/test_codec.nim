@@ -838,3 +838,30 @@ test "runtime encoding mode":
     s.setPosition(0)
     s.unpack(y)
     check x == y
+
+type
+  Guid {.skipUndistinct.} = distinct string
+  UUID {.skipUndistinct.} = distinct seq[string]
+  PRESTO = seq[string]
+
+proc pack_type*[ByteStream](s: ByteStream, v: Guid) =
+  s.pack_bin(len(v.string))
+  s.write(v.string)
+
+test "skip undistinct":
+  var b: Guid = Guid("AA")
+
+  var s = b.pack
+  check s.tohex == "C4024141"
+  check s.stringify == "BIN: 4141 "
+
+  var y = PRESTO(@["AA"])
+  var yy = y.pack
+  check yy.toHex == "91A24141"
+  check yy.stringify == "[ \"AA\" ] "
+
+  var z = UUID(@["AA"])
+  when compiles(var str = z.pack):
+    check false
+  else:
+    check true

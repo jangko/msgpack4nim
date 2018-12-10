@@ -104,7 +104,7 @@ ss.unpack(x) #unpack as usual
 | ptr | [see ref-types](#ref-types) | n/a |
 | ref | [see ref-types](#ref-types) | n/a |
 | circular ref | [see ref-types](#ref-types) | n/a |
-| distinct types | converted to base type | applicable base type |
+| distinct types** | converted to base type | applicable base type |
 | float32/64 | float32/64 | JFloat |
 | string | string8/16/32 | JString |
 | array/seq | array | JArray |
@@ -122,6 +122,23 @@ ss.unpack(x) #unpack as usual
 | object/tuple | array/map | JObject |
 
 \(\*\) please import msgpakc4collection for Nim standard library collections, they are no longer part of codec core
+\(\*\*\) use `{.skipUndistinct.}` pragma and provide your own implementation if you don't want default behavior
+
+```Nim
+import msgpack4nim, strutils
+
+type
+  Guid {.skipUndistinct.} = distinct string
+
+proc pack_type*[ByteStream](s: ByteStream, v: Guid) =
+  s.pack_bin(len(v.string))
+  s.write(v.string)
+
+var b = Guid("AA")
+var s = b.pack
+echo s.tohex == "C4024141"
+echo s.stringify == "BIN: 4141 "
+```
 
 ## object and tuple
 

@@ -125,16 +125,33 @@ proc conversionError*(msg: string): ref ObjectConversionError =
   new(result)
   result.msg = msg
 
+template skipUndistinct* {.pragma.}
+
+proc needToSkip(typ: typedesc): bool {.compileTime.} =
+  let z = getType(typ)[1]
+  if z.kind != nnkSym: return false
+  let impl = getImpl(z)
+  if impl.kind != nnkTypeDef: return false
+  if impl[2].kind != nnkDistinctTy: return false
+  if impl[0].kind != nnkPragmaExpr: return false
+  let prag = impl[0][1][0]
+  result = eqIdent("skipUndistinct", prag)
+
 #this macro convert any distinct types to it's base type
-macro undistinct*(x: typed): untyped =
+macro undistinctImpl*(x: typed, typ: typedesc): untyped =
   var ty = getType(x)
+  if needToSkip(typ):
+    result = x
+    return
   var isDistinct = ty.typekind == ntyDistinct
   if isDistinct:
     let parent = ty[1]
-    let T = newIdentNode($parent)
-    result = quote do: `T`(`x`)
+    result = quote do: `parent`(`x`)
   else:
     result = x
+
+template undistinct*(x: typed): untyped =
+  undistinctImpl(x, type(x))
 
 when system.cpuEndian == littleEndian:
   proc take8_8(val: uint8): uint8 {.inline.} = val
@@ -889,7 +906,7 @@ proc unpack_type*[ByteStream, T](s: ByteStream, val: var seq[T]) =
     if s.peekChar == pack_value_nil:
       val = @[]
       return
-      
+
   let len = s.unpack_array()
   if len < 0: raise conversionError("sequence")
   var x:T
