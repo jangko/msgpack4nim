@@ -121,8 +121,8 @@ ss.unpack(x) #unpack as usual
 | CritBitTree[void]* | array | JArray |
 | object/tuple | array/map | JObject |
 
-\(\*\) please import msgpakc4collection for Nim standard library collections, they are no longer part of codec core
-\(\*\*\) use `{.skipUndistinct.}` pragma and provide your own implementation if you don't want default behavior
+* \(\*\) please import msgpakc4collection for Nim standard library collections, they are no longer part of codec core
+* \(\*\*\) use `{.skipUndistinct.}` pragma and provide your own implementation if you don't want default behavior
 
 ```Nim
 import msgpack4nim, strutils
