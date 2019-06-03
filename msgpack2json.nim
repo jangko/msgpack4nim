@@ -8,8 +8,7 @@ proc toJsonNode*[ByteStream](s: ByteStream): JsonNode =
     discard s.readChar()
   of 0x80..0x8f, 0xde..0xdf:
     let len = s.unpack_map()
-    new(result)
-    result.kind = JObject
+    result = JsonNode(kind: JObject)
     result.fields = initOrderedTable[string, JsonNode](nextPowerOfTwo(len))
     for i in 0..<len:
       let key = toJsonNode(s)
@@ -17,8 +16,7 @@ proc toJsonNode*[ByteStream](s: ByteStream): JsonNode =
       result.fields.add(key.getStr(), toJsonNode(s))
   of 0x90..0x9f, 0xdc..0xdd:
     let len = s.unpack_array()
-    new(result)
-    result.kind = JArray
+    result = JsonNode(kind: JArray)
     result.elems = newSeq[JsonNode](len)
     for i in 0..<len:
       result.elems[i] = toJsonNode(s)
