@@ -27,8 +27,7 @@ type
     of msgNull: nil
 
 proc newMsgAny*(kind: AnyType): MsgAny =
-  new(result)
-  result.kind = kind
+  result = MsgAny(kind: kind)
 
 proc hash*(n: OrderedTable[MsgAny, MsgAny]): Hash {.noSideEffect.}
 

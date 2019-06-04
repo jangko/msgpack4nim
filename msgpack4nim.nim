@@ -313,10 +313,10 @@ proc pack_imp_int8*[ByteStream](s: ByteStream, val: int8) =
   if val < -(1 shl 5):
     #signed 8
     s.write(chr(0xd0))
-    s.write(take8_8(uint8(val)))
+    s.write(take8_8(cast[uint8](val)))
   else:
     #fixnum
-    s.write(take8_8(uint8(val)))
+    s.write(take8_8(cast[uint8](val)))
 
 proc unpack_imp_int8*[ByteStream](s: ByteStream): int8 =
   let c = s.readChar
@@ -333,7 +333,7 @@ proc pack_imp_int16*[ByteStream](s: ByteStream, val: int16) =
     if val < -(1 shl 7):
       #signed 16
       s.write(chr(0xd1))
-      s.store16(uint16(val))
+      s.store16(cast[uint16](val))
     else:
       #signed 8
       s.write(chr(0xd0))
@@ -374,7 +374,7 @@ proc pack_imp_int32*[ByteStream](s: ByteStream, val: int32) =
     if val < -(1 shl 15):
       #signed 32
       s.write(chr(0xd2))
-      s.store32(uint32(val))
+      s.store32(cast[uint32](val))
     elif val < -(1 shl 7):
       #signed 16
       s.write(chr(0xd1))
