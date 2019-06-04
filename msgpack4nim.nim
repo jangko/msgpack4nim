@@ -127,7 +127,7 @@ proc conversionError*(msg: string): ref ObjectConversionError =
 
 template skipUndistinct* {.pragma.}
 
-proc needToSkip(typ: typedesc): bool {.compileTime.} =
+proc needToSkip(typ: NimNode | typedesc): bool {.compileTime.} =
   let z = getType(typ)[1]
   if z.kind != nnkSym: return false
   let impl = getImpl(z)
