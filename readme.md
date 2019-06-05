@@ -122,7 +122,7 @@ ss.unpack(x) #unpack as usual
 | object/tuple | array/map | JObject |
 
 * \(\*\) please import msgpakc4collection for Nim standard library collections, they are no longer part of codec core
-* \(\*\*\) use `{.skipUndistinct.}` pragma and provide your own implementation if you don't want default behavior
+* \(\*\*\) use `{.skipUndistinct.}` or `{.noUndistinct.}` pragma and provide your own implementation if you don't want default behavior
 
 ```Nim
 import msgpack4nim, strutils
@@ -134,10 +134,47 @@ proc pack_type*[ByteStream](s: ByteStream, v: Guid) =
   s.pack_bin(len(v.string))
   s.write(v.string)
 
+proc unpack_type*[ByteStream](s: ByteStream, v: var Guid) =
+  let L = s.unpack_bin()
+  v = Guid(s.readStr(L))
+
 var b = Guid("AA")
 var s = b.pack
 echo s.tohex == "C4024141"
 echo s.stringify == "BIN: 4141 "
+
+var bb: Guid
+s.unpack(bb)
+check bb.string == b.string
+```
+
+If you feel using `{.skipUndistinct.}` violate non-intrusive principle, you can use
+`{.noUndistinct.}` pragma while defining your own `pack_type` or `unpack_type` proc.
+This workaround is needed because currently Nim compiler cannot know if an overloaded
+proc for distinct type declared at another module exists.
+
+```Nim
+import msgpack4nim, strutils
+
+type
+  Guid = distinct string
+
+proc pack_type*[ByteStream](s: ByteStream, v: Guid) {.noUndistinct.} =
+  s.pack_bin(len(v.string))
+  s.write(v.string)
+
+proc unpack_type*[ByteStream](s: ByteStream, v: var Guid) {.noUndistinct.} =
+  let L = s.unpack_bin()
+  v = Guid(s.readStr(L))
+
+var b = Guid("AA")
+var s = b.pack
+echo s.tohex == "C4024141"
+echo s.stringify == "BIN: 4141 "
+
+var bb: Guid
+s.unpack(bb)
+check bb.string == b.string
 ```
 
 ## object and tuple

@@ -26,7 +26,9 @@ when not declared SomeFloat:
   type
     SomeFloat = SomeReal
 
-import endians, macros, strutils, streams
+import endians, macros, strutils, streams, macrocache
+
+{.experimental: "dynamicBindSym".}
 
 const pack_value_nil* = chr(0xc0)
 
@@ -125,10 +127,25 @@ proc conversionError*(msg: string): ref ObjectConversionError =
   new(result)
   result.msg = msg
 
+const
+  undistinctMap = CacheTable"msgpack4nim"
+
+proc containsImpl(x: CacheTable, z: string): bool =
+  # workaround CacheTable missing .contains
+  when compiles(z in x):
+    result = z in x
+  else:
+    for k, _ in x:
+      if eqIdent(k, z): return true
+
 template skipUndistinct* {.pragma.}
 
 proc needToSkip(typ: NimNode | typedesc): bool {.compileTime.} =
   let z = getType(typ)[1]
+
+  if z.kind == nnkSym:
+    if undistinctMap.containsImpl($z): return true
+
   if z.kind != nnkSym: return false
   let impl = getImpl(z)
   if impl.kind != nnkTypeDef: return false
@@ -149,6 +166,30 @@ macro undistinctImpl*(x: typed, typ: typedesc): untyped =
     result = quote do: `parent`(`x`)
   else:
     result = x
+
+proc checkProcName(n: NimNode) =
+  if n.kind != nnkPostfix:
+    error("please use export marker '*'", n)
+  if not (eqIdent(n[1], "pack_type") or eqIdent(n[1], "unpack_type")):
+    error("proc name should be '[un]pack_type'", n)
+
+proc getParamIdent(n: NimNode): string =
+  n[1].expectKind({nnkIdent, nnkVarTy})
+  if n[1].kind == nnkIdent:
+    result = $n[1]
+  else:
+    result = $n[1][0]
+
+macro noUndistinct*(x: untyped): untyped =
+  x.expectKind(nnkProcDef)
+  checkProcName(x[0])
+  let p = x[3] # FormalParams
+  if p.len != 3:
+    error("got " & $(p.len - 1) & " but require 2 params", x)
+  let last = p[^1].getParamIdent
+  if not containsImpl(undistinctMap, last):
+    undistinctMap[last] = newLit(true)
+  result = x
 
 template undistinct*(x: typed): untyped =
   undistinctImpl(x, type(x))
