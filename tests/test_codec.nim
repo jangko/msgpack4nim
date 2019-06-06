@@ -840,13 +840,19 @@ test "runtime encoding mode":
     check x == y
 
 type
-  Guid {.skipUndistinct.} = distinct string
-  UUID {.skipUndistinct.} = distinct seq[string]
+  Guid = distinct string
+  UUID = distinct seq[string]
+
   PRESTO = seq[string]
+  IID = distinct string
 
 proc pack_type*[ByteStream](s: ByteStream, v: Guid) =
   s.pack_bin(len(v.string))
   s.write(v.string)
+
+proc unpack_type*[ByteStream](s: ByteStream, v: var Guid) =
+  let L = s.unpack_bin()
+  v = Guid(s.readStr(L))
 
 test "skip undistinct":
   var b: Guid = Guid("AA")
@@ -854,6 +860,10 @@ test "skip undistinct":
   var s = b.pack
   check s.tohex == "C4024141"
   check s.stringify == "BIN: 4141 "
+
+  var bb: Guid
+  s.unpack(bb)
+  check bb.string == b.string
 
   var y = PRESTO(@["AA"])
   var yy = y.pack
