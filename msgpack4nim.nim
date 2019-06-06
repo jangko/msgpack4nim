@@ -1,6 +1,6 @@
 # MessagePack implementation written in nim
 #
-# Copyright (c) 2015-2018 Andri Lim
+# Copyright (c) 2015-2019 Andri Lim
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -26,9 +26,7 @@ when not declared SomeFloat:
   type
     SomeFloat = SomeReal
 
-import endians, macros, strutils, streams, macrocache
-
-{.experimental: "dynamicBindSym".}
+import endians, macros, strutils, streams
 
 const pack_value_nil* = chr(0xc0)
 
@@ -127,24 +125,29 @@ proc conversionError*(msg: string): ref ObjectConversionError =
   new(result)
   result.msg = msg
 
-const
-  undistinctMap = CacheTable"msgpack4nim"
+template skipUndistinct* {.pragma, deprecated.}
+  # no need to use this pragma anymore
+  # the undistinct macro is more clever now
 
-proc containsImpl(x: CacheTable, z: string): bool =
-  # workaround CacheTable missing .contains
-  when compiles(z in x):
-    result = z in x
+proc getParamIdent(n: NimNode): NimNode =
+  n.expectKind({nnkIdent, nnkVarTy, nnkSym})
+  if n.kind in {nnkIdent, nnkSym}:
+    result = n
   else:
-    for k, _ in x:
-      if eqIdent(k, z): return true
+    result = n[0]
 
-template skipUndistinct* {.pragma.}
+proc hasDistinctImpl(w: NimNode, z: NimNode): bool =
+  for k in w:
+    let p = k.getImpl()[3][2][1]
+    if p.kind in {nnkIdent, nnkVarTy, nnkSym}:
+      let paramIdent = getParamIdent(p)
+      if eqIdent(paramIdent, z): return true
 
-proc needToSkip(typ: NimNode | typedesc): bool {.compileTime.} =
+proc needToSkip(typ: NimNode | typedesc, w: NimNode): bool {.compileTime.} =
   let z = getType(typ)[1]
 
   if z.kind == nnkSym:
-    if undistinctMap.containsImpl($z): return true
+    if hasDistinctImpl(w, z): return true
 
   if z.kind != nnkSym: return false
   let impl = getImpl(z)
@@ -155,9 +158,9 @@ proc needToSkip(typ: NimNode | typedesc): bool {.compileTime.} =
   result = eqIdent("skipUndistinct", prag)
 
 #this macro convert any distinct types to it's base type
-macro undistinctImpl*(x: typed, typ: typedesc): untyped =
+macro undistinctImpl*(x: typed, typ: typedesc, w: typed): untyped =
   var ty = getType(x)
-  if needToSkip(typ):
+  if needToSkip(typ, w):
     result = x
     return
   var isDistinct = ty.typekind == ntyDistinct
@@ -167,32 +170,11 @@ macro undistinctImpl*(x: typed, typ: typedesc): untyped =
   else:
     result = x
 
-proc checkProcName(n: NimNode) =
-  if n.kind != nnkPostfix:
-    error("please use export marker '*'", n)
-  if not (eqIdent(n[1], "pack_type") or eqIdent(n[1], "unpack_type")):
-    error("proc name should be '[un]pack_type'", n)
+template undistinct_pack*(x: typed): untyped =
+  undistinctImpl(x, type(x), bindSym("pack_type", brForceOpen))
 
-proc getParamIdent(n: NimNode): string =
-  n[1].expectKind({nnkIdent, nnkVarTy})
-  if n[1].kind == nnkIdent:
-    result = $n[1]
-  else:
-    result = $n[1][0]
-
-macro noUndistinct*(x: untyped): untyped =
-  x.expectKind(nnkProcDef)
-  checkProcName(x[0])
-  let p = x[3] # FormalParams
-  if p.len != 3:
-    error("got " & $(p.len - 1) & " but require 2 params", x)
-  let last = p[^1].getParamIdent
-  if not containsImpl(undistinctMap, last):
-    undistinctMap[last] = newLit(true)
-  result = x
-
-template undistinct*(x: typed): untyped =
-  undistinctImpl(x, type(x))
+template undistinct_unpack*(x: typed): untyped =
+  undistinctImpl(x, type(x), bindSym("unpack_type", brForceOpen))
 
 when system.cpuEndian == littleEndian:
   proc take8_8(val: uint8): uint8 {.inline.} = val
@@ -710,7 +692,7 @@ proc pack_items_imp*[ByteStream, T](s: ByteStream, val: T) {.inline.} =
   var ss = MsgStream.init(sizeof(T))
   var count = 0
   for i in items(val):
-    ss.pack undistinct(i)
+    ss.pack undistinct_pack(i)
     inc(count)
   s.pack_array(count)
   s.write(ss.data)
@@ -718,22 +700,22 @@ proc pack_items_imp*[ByteStream, T](s: ByteStream, val: T) {.inline.} =
 proc pack_map_imp*[ByteStream, T](s: ByteStream, val: T) {.inline.} =
   s.pack_map(val.len)
   for k,v in pairs(val):
-    s.pack_type undistinct(k)
-    s.pack_type undistinct(v)
+    s.pack_type undistinct_pack(k)
+    s.pack_type undistinct_pack(v)
 
 proc pack_type*[ByteStream, T](s: ByteStream, val: openArray[T]) =
   s.pack_array(val.len)
-  for i in 0..val.len-1: s.pack_type undistinct(val[i])
+  for i in 0..val.len-1: s.pack_type undistinct_pack(val[i])
 
 proc pack_type*[ByteStream, T](s: ByteStream, val: seq[T]) =
   when compiles(isNil(val)):
     if isNil(val): s.pack_imp_nil()
     else:
       s.pack_array(val.len)
-      for i in 0..val.len-1: s.pack_type undistinct(val[i])
+      for i in 0..val.len-1: s.pack_type undistinct_pack(val[i])
   else:
     s.pack_array(val.len)
-    for i in 0..val.len-1: s.pack_type undistinct(val[i])
+    for i in 0..val.len-1: s.pack_type undistinct_pack(val[i])
 
 proc pack_type*[ByteStream; T: enum|range](s: ByteStream, val: T) =
   when val is range:
@@ -751,29 +733,29 @@ proc pack_type*[ByteStream; T: tuple|object](s: ByteStream, val: T) =
       s.pack_map(len)
       for field, value in fieldPairs(val):
         s.pack_type field
-        s.pack_type undistinct(value)
+        s.pack_type undistinct_pack(value)
     elif defined(msgpack_obj_to_stream):
       for field in fields(val):
-        s.pack_type undistinct(field)
+        s.pack_type undistinct_pack(field)
     else:
       s.pack_array(len)
       for field in fields(val):
-        s.pack_type undistinct(field)
+        s.pack_type undistinct_pack(field)
 
   when ByteStream is MsgStream:
     case s.encodingMode
     of MSGPACK_OBJ_TO_ARRAY:
       s.pack_array(len)
       for field in fields(val):
-        s.pack_type undistinct(field)
+        s.pack_type undistinct_pack(field)
     of MSGPACK_OBJ_TO_MAP:
       s.pack_map(len)
       for field, value in fieldPairs(val):
         s.pack_type field
-        s.pack_type undistinct(value)
+        s.pack_type undistinct_pack(value)
     of MSGPACK_OBJ_TO_STREAM:
       for field in fields(val):
-        s.pack_type undistinct(field)
+        s.pack_type undistinct_pack(field)
     else:
       dry_and_wet()
   else:
@@ -1107,8 +1089,8 @@ proc unpack_type*[ByteStream](s: ByteStream, val: var pointer) =
   discard
   #raise conversionError("can't convert pointer type")
 
-proc pack*[ByteStream, T](s: ByteStream, val: T) = s.pack_type undistinct(val)
-proc unpack*[ByteStream, T](s: ByteStream, val: var T) = s.unpack_type undistinct(val)
+proc pack*[ByteStream, T](s: ByteStream, val: T) = s.pack_type undistinct_pack(val)
+proc unpack*[ByteStream, T](s: ByteStream, val: var T) = s.unpack_type undistinct_unpack(val)
 
 proc pack*[T](val: T): string =
   var s = MsgStream.init(sizeof(T))

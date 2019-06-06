@@ -24,15 +24,15 @@ proc pack_type*[ByteStream, T](s: ByteStream, val: DoublyLinkedRing[T]) =
 
 proc pack_type*[ByteStream, T](s: ByteStream, val: Deque[T]) =
   s.pack_array(val.len)
-  for i in items(val): s.pack_type undistinct(i)
+  for i in items(val): s.pack_type undistinct_pack(i)
 
 proc pack_type*[ByteStream, T](s: ByteStream, val: HashSet[T]) =
   s.pack_array(val.len)
-  for i in items(val): s.pack_type undistinct(i)
+  for i in items(val): s.pack_type undistinct_pack(i)
 
 proc pack_type*[ByteStream, T](s: ByteStream, val: OrderedSet[T]) =
   s.pack_array(val.len)
-  for i in items(val): s.pack_type undistinct(i)
+  for i in items(val): s.pack_type undistinct_pack(i)
 
 proc pack_type*[ByteStream, K,V](s: ByteStream, val: Table[K,V]) =
   s.pack_map_imp(val)
