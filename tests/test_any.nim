@@ -279,6 +279,7 @@ suite "dynamic json-like conversion":
 
     var b = anyMap()
     b[anyInt(123)] = anyString("non-string-field")
+    b["someInt"] = anyInt(123)
     b["name"] = anyString("apple")
     b["color"] = anyInt(1001)
 
