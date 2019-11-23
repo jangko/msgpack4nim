@@ -1085,15 +1085,21 @@ proc unpack_type*[ByteStream; T: tuple|object](s: ByteStream, val: var T) =
     when defined(msgpack_obj_to_map):
       let len = s.unpack_map()
       var name: string
+      var found: bool
       for i in 0..len-1:
         if not s.is_string:
           s.skip_msg()
           s.skip_msg()
           continue
         unpack_proxy(name)
+        found = false
         for field, value in fieldPairs(val):
           if field == name:
+            found = true
             unpack_proxy(value)
+            break
+        if not found:
+          s.skip_msg()
     elif defined(msgpack_obj_to_stream):
       for field in fields(val):
         unpack_proxy(field)
@@ -1117,15 +1123,21 @@ proc unpack_type*[ByteStream; T: tuple|object](s: ByteStream, val: var T) =
     of MSGPACK_OBJ_TO_MAP:
       let len = s.unpack_map()
       var name: string
+      var found: bool
       for i in 0..len-1:
         if not s.is_string:
           s.skip_msg()
           s.skip_msg()
           continue
         unpack_proxy(name)
+        found = false
         for field, value in fieldPairs(val):
           if field == name:
+            found = true
             unpack_proxy(value)
+            break
+        if not found:
+          s.skip_msg()
     of MSGPACK_OBJ_TO_STREAM:
       for field in fields(val):
         unpack_proxy(field)
