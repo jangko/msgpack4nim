@@ -276,3 +276,18 @@ suite "dynamic json-like conversion":
       var y = unpack(fromAny(a), Fruit)
       check y.name == "apple"
       check y.color == 1001
+
+    var b = anyMap()
+    b[anyInt(123)] = anyString("non-string-field")
+    b["name"] = anyString("apple")
+    b["color"] = anyInt(1001)
+
+    var s2 = MsgStream.init(fromAny(b), MSGPACK_OBJ_TO_MAP)
+    var x2 = s2.unpack(Fruit)
+    check x2.name == "apple"
+    check x2.color == 1001
+
+    when defined(msgpack_obj_to_map):
+      var y2 = unpack(fromAny(b), Fruit)
+      check y2.name == "apple"
+      check y2.color == 1001
