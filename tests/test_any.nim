@@ -254,3 +254,25 @@ suite "dynamic json-like conversion":
     check a_arr[0].binData == "binary data"
     check a_arr[1].extType == extType
     check a_arr[1].extData == "ext oi..."
+
+  test "map with non-string field":
+    type
+      Fruit = object
+        name: string
+        color: int
+
+    var a = anyMap()
+    a[anyInt(123)] = anyString("non-string-field")
+    a["name"] = anyString("apple")
+    a["color"] = anyInt(1001)
+    a["someInt"] = anyInt(123)
+
+    var s = MsgStream.init(fromAny(a), MSGPACK_OBJ_TO_MAP)
+    var x = s.unpack(Fruit)
+    check x.name == "apple"
+    check x.color == 1001
+
+    when defined(msgpack_obj_to_map):
+      var y = unpack(fromAny(a), Fruit)
+      check y.name == "apple"
+      check y.color == 1001
