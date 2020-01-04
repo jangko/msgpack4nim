@@ -1,4 +1,4 @@
-import unittest, ..\msgpack4nim, strutils, math, random
+import unittest, ../msgpack4nim, strutils, math, random
 
 proc parseDigit*(x: char): uint8 =
   if x in Digits: result = uint8(x.ord - '0'.ord)

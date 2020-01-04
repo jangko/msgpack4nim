@@ -1,6 +1,6 @@
 import streams, endians, strutils, sequtils, algorithm, math, hashes
 import tables, intsets, lists, deques, sets, strtabs, critbits
-import ..\msgpack4nim, unittest, ..\msgpack4nim\msgpack4collection
+import ../msgpack4nim, unittest, ../msgpack4nim/msgpack4collection
 
 type
   Choco = object

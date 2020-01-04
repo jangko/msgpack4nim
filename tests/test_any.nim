@@ -1,6 +1,6 @@
 import unittest, strutils, strtabs
-import ..\msgpack4nim\[msgpack4collection, msgpack2any]
-import ..\msgpack4nim
+import ../msgpack4nim/[msgpack4collection, msgpack2any]
+import ../msgpack4nim
 
 suite "dynamic json-like conversion":
 
