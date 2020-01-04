@@ -1,4 +1,4 @@
-import ..\msgpack4nim, tables, math, hashes, strutils
+import ../msgpack4nim, tables, math, hashes, strutils
 
 type
   AnyType* = enum

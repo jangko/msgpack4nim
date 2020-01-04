@@ -1,4 +1,4 @@
-import sequtils, math, ..\msgpack4nim
+import sequtils, math, ../msgpack4nim
 import tables, intsets, lists, deques, sets, strtabs, critbits
 
 proc pack_type*[ByteStream](s: ByteStream, val: IntSet) =
