@@ -1042,7 +1042,7 @@ proc skip_msg*[ByteStream](s: ByteStream) =
     len = s.unpack_bin()
     discard s.readStr(len)
   of 0xc7..0xc9, 0xd4..0xd8:
-    let (exttype, extlen) = s.unpack_ext()
+    let (_, extlen) = s.unpack_ext()
     discard s.readStr(extlen)
   of 0xca:
     discard s.unpack_imp_float32()

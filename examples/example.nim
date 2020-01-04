@@ -1,4 +1,4 @@
-import msgpack4nim, streams
+import ../msgpack4nim, streams
 
 type
   #lets try with a many members with different types object

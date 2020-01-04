@@ -1,4 +1,4 @@
-import unittest, msgpack4nim, strutils, streams, math, random
+import unittest, ../msgpack4nim, strutils, math, random
 
 proc parseDigit*(x: char): uint8 =
   if x in Digits: result = uint8(x.ord - '0'.ord)
@@ -24,7 +24,7 @@ proc toHex*(s: string): string =
 proc cmp(a, b: string): bool =
   result = a == toBinary(b)
   if not result: echo toHex(a)
-    
+
 suite "msgpack specification test":
 
   test "bool & nil":

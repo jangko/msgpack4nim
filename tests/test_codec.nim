@@ -1,6 +1,6 @@
 import streams, endians, strutils, sequtils, algorithm, math, hashes
 import tables, intsets, lists, deques, sets, strtabs, critbits
-import msgpack4nim, unittest, msgpack4collection
+import ../msgpack4nim, unittest, ../msgpack4nim/msgpack4collection
 
 type
   Choco = object
@@ -70,7 +70,7 @@ proc initCarrier(): carrier =
   result.six.prepend(boat(66))
   result.seven = initDeque[ship]()
   result.seven.addLast(ship("seven"))
-  result.eight = initSet[boat]()
+  result.eight = initHashSet[boat]()
   result.eight.incl(boat(88))
   result.nine = initOrderedSet[ship]()
   result.nine.incl(ship("nine"))
@@ -89,7 +89,6 @@ type
   UUID = distinct seq[string]
 
   PRESTO = seq[string]
-  IID = distinct string
 
 proc pack_type[ByteStream](s: ByteStream, v: Guid) =
   s.pack_bin(len(v.string))
@@ -368,7 +367,7 @@ suite "msgpack encoder-decoder":
     var d = initSinglyLinkedRing[Choco]()
     var e = initDoublyLinkedRing[Choco]()
     var f = initDeque[Choco]()
-    var g = initSet[Choco]()
+    var g = initHashSet[Choco]()
     var h = initOrderedSet[Choco]()
     var k : CritBitTree[void]
     var x = Choco(a:1,b:2)
@@ -873,6 +872,8 @@ suite "msgpack encoder-decoder":
 
     var z = UUID(@["AA"])
     when compiles(var str = z.pack):
+      discard z # silence unused warning
       check false
     else:
+      discard z # silence unused warning
       check true

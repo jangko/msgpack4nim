@@ -1,4 +1,4 @@
-import msgpack4nim, streams, tables, sets, strtabs, msgpack4collection
+import ../msgpack4nim, streams, tables, sets, strtabs, ../msgpack4nim/msgpack4collection
 
 type
   Horse = object

@@ -1,4 +1,4 @@
-import unittest, msgpack4nim, strutils, streams, msgpack2json, json, os
+import unittest, ../msgpack4nim, strutils, ../msgpack4nim/msgpack2json, json, os
 
 suite "json-msgpack conversion":
 
