@@ -21,6 +21,7 @@ task test, "Run all tests":
 
   exec "nim c -d:release -r examples/test"
   exec "nim c -d:release -r -d:msgpack_obj_to_map tests/test_any"
-  exec "nim c -d:release -r tests/test_json"
+  # because uses `getAppDir()`, see https://github.com/nim-lang/Nim/pull/13382
+  exec "nim c -d:release -r --outdir:'$projectdir' tests/test_json"
   exec "nim c -d:release -r tests/test_codec"
   exec "nim c -d:release -r tests/test_spec"
