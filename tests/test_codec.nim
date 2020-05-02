@@ -614,6 +614,31 @@ suite "msgpack encoder-decoder":
     discard pack(rr)
     discard pack(tt)
 
+  test "ref and value mixed, the first element is null":
+    type
+      CustomType = object
+        strref: ref string
+        str: string
+
+    var
+      o = CustomType(str: "str")
+      s = MsgStream.init()
+
+    s.pack(o)
+
+    check:
+      s.data.stringify == """[ null, "str" ] """
+
+    var
+      ss = MsgStream.init(s.data)
+      oo: CustomType
+
+    ss.unpack(oo)
+
+    check:
+      oo.strref == nil
+      oo.str == o.str
+
   test "inheritance":
     type
       KAB = object of RootObj

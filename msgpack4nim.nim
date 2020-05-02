@@ -1122,7 +1122,9 @@ proc unpack_type*[ByteStream; T: tuple|object](s: ByteStream, val: var T) =
     dry_and_wet()
 
 proc unpack_type*[ByteStream; T: ref](s: ByteStream, val: var T) =
-  if s.peekChar == pack_value_nil: return
+  if s.peekChar == pack_value_nil:
+    s.skip_msg()
+    return
   if isNil(val): new(val)
   s.unpack(val[])
 
