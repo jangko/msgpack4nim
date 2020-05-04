@@ -310,7 +310,7 @@ proc pack_imp_uint64*[ByteStream](s: ByteStream, val: uint64) =
       #unsigned 16
       s.write(chr(0xcd))
       s.store16(uint16(val))
-    elif val < uint64(1 shl 32):
+    elif val < (1'u64 shl 32):
       #unsigned 32
       s.write(chr(0xce))
       s.store32(uint32(val))
@@ -447,7 +447,7 @@ proc unpack_imp_int32*[ByteStream](s: ByteStream): int32 =
 
 proc pack_imp_int64*[ByteStream](s: ByteStream, val: int64) =
   if val < -(1 shl 5):
-    if val < -(1 shl 31):
+    if val < -(1'i64 shl 31):
       #signed 64
       s.write(chr(0xd3))
       s.store64(uint64(val))
@@ -477,7 +477,7 @@ proc pack_imp_int64*[ByteStream](s: ByteStream, val: int64) =
       #unsigned 16
       s.write(chr(0xcd))
       s.store16(uint16(val))
-    elif val < (1 shl 32):
+    elif val < (1'i64 shl 32):
       #unsigned 32
       s.write(chr(0xce))
       s.store32(uint32(val))
