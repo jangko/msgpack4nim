@@ -97,7 +97,7 @@ proc readStr*(s: MsgStream, length: int): string =
   result = newString(length)
   if length != 0:
     var L = s.readData(addr(result[0]), length)
-    doAssert(L == length, "string len mismatch")
+    if L != length: raise newException(IOError, "string len mismatch")
 
 proc readChar*(s: MsgStream): char =
   s.read(result)

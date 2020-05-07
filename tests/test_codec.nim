@@ -267,7 +267,7 @@ suite "msgpack encoder-decoder":
         ss = MsgStream.init(s.data[0..i])
         oo: string
 
-      expect(AssertionError):
+      expect(IOError):
         ss.unpack(oo)
 
   test "float number":
