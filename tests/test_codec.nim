@@ -252,6 +252,24 @@ suite "msgpack encoder-decoder":
     check gg == g
     check hh == h
 
+  test "partial string raise error":
+    var
+      s = MsgStream.init()
+      o = "string"
+
+    s.pack(o)
+
+    check:
+      s.data.stringify == "\"string\" "
+
+    for i in 0..<s.data.len - 1:
+      var
+        ss = MsgStream.init(s.data[0..i])
+        oo: string
+
+      expect(IOError):
+        ss.unpack(oo)
+
   test "float number":
     var xx = [-1.0'f32, -2.0, 0.0, Inf, NegInf, 1.0, 2.0]
 
