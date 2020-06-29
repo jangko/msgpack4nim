@@ -150,6 +150,7 @@ proc testTimestamp(v, m: JsonNode): bool =
     let (typ, con) = parseExt(y)
     let res = parseTimestamp(con)
     result = (typ == -1) and (sec_ns == ($res[0], $res[1]))
+    debugEcho sec_ns[0], " ", $res[0], " ", sec_ns[1], " ", $res[1], " ", result
 
 proc testElem(n: JsonNode): bool =
   doAssert(n.kind == JObject)

@@ -36,4 +36,5 @@ install:
 
 script:
   - nimble install -y > /dev/null
+  - nim -v
   - nimble test
