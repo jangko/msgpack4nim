@@ -23,6 +23,7 @@ task test, "Run all tests":
   exec "nim c -r --outdir:tests tests/test_json"
   exec "nim c -r tests/test_codec"
   exec "nim c -r tests/test_spec"
+  exec "nim c -r tests/test_suite"
 
   exec "nim c -d:release -r examples/test"
   exec "nim c -d:release -r -d:msgpack_obj_to_map tests/test_any"
@@ -31,3 +32,4 @@ task test, "Run all tests":
 
   exec "nim c -d:release -r tests/test_codec"
   exec "nim c -d:release -r tests/test_spec"
+  exec "nim c -d:release -r tests/test_suite"
