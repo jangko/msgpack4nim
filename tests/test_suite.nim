@@ -143,13 +143,13 @@ proc testTimestamp(v, m: JsonNode): bool =
   doAssert(v.kind == JArray)
   result = true
 
-  let sec_ns = (v[0].getInt.int64, v[1].getInt.int64)
+  let sec_ns = (v[0].getStr, v[1].getStr)
 
   for x in m:
     let y = parseHexDash(x)
     let (typ, con) = parseExt(y)
     let res = parseTimestamp(con)
-    result = (typ == -1) and (sec_ns == res)
+    result = (typ == -1) and (sec_ns == ($res[0], $res[1]))
 
 proc testElem(n: JsonNode): bool =
   doAssert(n.kind == JObject)
