@@ -1218,7 +1218,7 @@ proc unpack*[ByteStream, T](s: ByteStream, val: typedesc[T]): T {.inline.} =
 proc unpack*[T](data: string, val: typedesc[T]): T {.inline.} =
   unpack(data, result)
 
-proc stringify[ByteStream](s: ByteStream, zz: ByteStream) =
+proc stringify*[ByteStream](s: ByteStream, zz: ByteStream) =
   let c = ord(s.peekChar)
   var len = 0
   case c
