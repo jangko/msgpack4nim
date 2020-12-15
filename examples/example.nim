@@ -27,4 +27,4 @@ var xx: CustomType
 s.unpack(xx) #and here too
 
 assert xx == x
-echo "OK ", xx.name
+#echo "OK ", xx.name

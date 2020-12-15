@@ -1,4 +1,4 @@
-import streams, ../msgpack4nim
+import streams, ../msgpack4nim, unittest
 
 type
   TA = object of RootObj
@@ -12,4 +12,6 @@ var
 new(b)
 a = b
 
-echo stringify(pack(a)) #produces "[ ]", not "[ 0 ]" or '{ "f" : 0 }'
+test "restriction":
+  #produces "[ ]", not "[ 0 ]" or '{ "f" : 0 }'
+  check stringify(pack(a)) == "[  ] "
