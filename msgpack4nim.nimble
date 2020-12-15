@@ -16,20 +16,32 @@ template exec(cmd) =
   echo cmd
   system.exec(cmd)
 
+### Helper functions
+proc test(env, path: string) =
+  # Compilation language is controlled by TEST_LANG
+  var lang = "c"
+  if existsEnv"TEST_LANG":
+    lang = getEnv"TEST_LANG"
+
+  if not dirExists "build":
+    mkDir "build"
+  exec "nim " & lang & " " & env &
+    " --outdir:build -r --hints:off --warnings:off " & path
+
 task test, "Run all tests":
-  exec "nim c -r examples/test"
-  exec "nim c -r -d:msgpack_obj_to_map tests/test_any"
+  test "-d:debug", "examples/test"
+  test "-d:msgpack_obj_to_map", "tests/test_any"
   # because uses `getAppDir()`, see https://github.com/nim-lang/Nim/pull/13382
-  exec "nim c -r --outdir:tests tests/test_json"
-  exec "nim c -r tests/test_codec"
-  exec "nim c -r tests/test_spec"
-  exec "nim c -r tests/test_suite"
+  test "-d:debug --outdir:tests", "tests/test_json"
+  test "-d:debug", "tests/test_codec"
+  test "-d:debug", "tests/test_spec"
+  test "-d:debug", "tests/test_suite"
 
-  exec "nim c -d:release -r examples/test"
-  exec "nim c -d:release -r -d:msgpack_obj_to_map tests/test_any"
+  test "-d:release", "examples/test"
+  test "-d:release -d:msgpack_obj_to_map", "tests/test_any"
   # ditto
-  exec "nim c -d:release --outdir:tests tests/test_json"
+  test "-d:release --outdir:tests", "tests/test_json"
 
-  exec "nim c -d:release -r tests/test_codec"
-  exec "nim c -d:release -r tests/test_spec"
-  exec "nim c -d:release -r tests/test_suite"
+  test "-d:release", "tests/test_codec"
+  test "-d:release", "tests/test_spec"
+  test "-d:release", "tests/test_suite"
