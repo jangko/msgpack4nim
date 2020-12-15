@@ -1,4 +1,7 @@
-import ../msgpack4nim, streams, tables, sets, strtabs, ../msgpack4nim/msgpack4collection
+import
+  streams, tables, sets, strtabs,
+  ../msgpack4nim/msgpack4collection,
+  ../msgpack4nim, unittest
 
 type
   Horse = object
@@ -24,6 +27,7 @@ var tom: Cat
 var buf = pack(stallion) #pack a Horse here
 unpack(buf, tom) #magically, it will unpack into a Cat
 
-echo "legs: ", $tom.legs
-echo "kittens: ", $tom.kittens
-echo "traits: ", $tom.traits
+test "gochas":
+  check tom.legs == 4
+  check $tom.kittens == "{\"colt\", \"jilly\"}"
+  check $tom.traits == "{color: black, speed: 120mph}"

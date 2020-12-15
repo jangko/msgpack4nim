@@ -14,6 +14,7 @@ I found out nim compiler is smart enough to make serialization/deserialization t
 [![Windows build status (Appveyor)](https://img.shields.io/appveyor/ci/jangko/msgpack4nim/master.svg?label=Windows "Windows build status (Appveyor)")](https://ci.appveyor.com/project/jangko/msgpack4nim)
 ![nimble](https://img.shields.io/badge/available%20on-nimble-yellow.svg?style=flat-square)
 ![license](https://img.shields.io/github/license/citycide/cascade.svg?style=flat-square)
+![Github action](https://github.com/jangko/msgpack4nim/workflows/msgpack4nim%20CI/badge.svg)
 
 ## Example
 
@@ -126,7 +127,7 @@ ss.unpack(x) #unpack as usual
 
 ## distinct types
 
-If distinct types encountered, it will be converted back to it's base type. 
+If distinct types encountered, it will be converted back to it's base type.
 If you don't like this behavior, since version 0.2.9 msgpack4nim allow you
 to override this default behavior by supplying your own implementation of
 `pack_type` and `unpack_type`.
