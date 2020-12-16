@@ -142,7 +142,7 @@ jobs:
           getHash() {
             git ls-remote "https://github.com/$1" "${2:-HEAD}" | cut -f 1
           }
-          nimHash=$(getHash nim-lang/Nim '${{ matrix.branch }}')
+          nimHash=$(getHash nim-lang/Nim devel)
           csourcesHash=$(getHash nim-lang/csources)
           echo "::set-output name=nim::$nimHash"
           echo "::set-output name=csources::$csourcesHash"
@@ -218,7 +218,5 @@ jobs:
       - name: Run msgpack4nim tests
         shell: bash
         run: |
-          export UCPU="$cpu"
           cd msgpack4nim
-          nimble install -y --depsOnly
-          nimble test
+          env TEST_LANG="${{ matrix.target.TEST_LANG }}" nimble test
