@@ -23,9 +23,17 @@ proc test(env, path: string) =
   if existsEnv"TEST_LANG":
     lang = getEnv"TEST_LANG"
 
+  when defined(macosx):
+    let specific = if lang == "cpp":
+                     " --passC:\"-Wno-c++11-narrowing\" "
+                   else:
+                     ""
+  else:
+    const specific = ""
+
   if not dirExists "build":
     mkDir "build"
-  exec "nim " & lang & " " & env &
+  exec "nim " & lang & " " & env & specific &
     " -r --hints:off --warnings:off " & path
 
 task test, "Run all tests":
