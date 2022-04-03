@@ -7,38 +7,18 @@ jobs:
       fail-fast: false
       max-parallel: 20
       matrix:
-        branch: [master]
+        test_lang: [c, cpp]
         target:
           - os: linux
             cpu: amd64
-            TEST_LANG: c
-          - os: linux
-            cpu: amd64
-            TEST_LANG: cpp
           - os: linux
             cpu: i386
-            TEST_LANG: c
-          - os: linux
-            cpu: i386
-            TEST_LANG: cpp
           - os: macos
             cpu: amd64
-            TEST_LANG: c
-          - os: macos
-            cpu: amd64
-            TEST_LANG: cpp
           - os: windows
             cpu: amd64
-            TEST_LANG: c
-          - os: windows
-            cpu: amd64
-            TEST_LANG: cpp
           - os: windows
             cpu: i386
-            TEST_LANG: c
-          - os: windows
-            cpu: i386
-            TEST_LANG: cpp
         include:
           - target:
               os: linux
@@ -50,7 +30,7 @@ jobs:
               os: windows
             builder: windows-2019
 
-    name: '${{ matrix.target.os }}-${{ matrix.target.cpu }}-${{ matrix.target.TEST_LANG }} (${{ matrix.branch }})'
+    name: '${{ matrix.target.os }}-${{ matrix.target.cpu }}-${{ matrix.test_lang }}'
     runs-on: ${{ matrix.builder }}
     steps:
       - name: Checkout msgpack4nim
@@ -102,11 +82,12 @@ jobs:
         shell: bash
         run: |
           mkdir -p external
+          MINGW_BASE="https://github.com/brechtsanders/winlibs_mingw/releases/download/11.2.0-12.0.1-9.0.0-r1"
           if [[ '${{ matrix.target.cpu }}' == 'amd64' ]]; then
-            MINGW_URL="https://sourceforge.net/projects/mingw-w64/files/Toolchains targetting Win64/Personal Builds/mingw-builds/8.1.0/threads-posix/seh/x86_64-8.1.0-release-posix-seh-rt_v6-rev0.7z"
+            MINGW_URL="$MINGW_BASE/winlibs-x86_64-posix-seh-gcc-11.2.0-mingw-w64-9.0.0-r1.7z"
             ARCH=64
           else
-            MINGW_URL="https://sourceforge.net/projects/mingw-w64/files/Toolchains targetting Win32/Personal Builds/mingw-builds/8.1.0/threads-posix/dwarf/i686-8.1.0-release-posix-dwarf-rt_v6-rev0.7z"
+            MINGW_URL="$MINGW_BASE/winlibs-i686-posix-dwarf-gcc-11.2.0-mingw-w64-9.0.0-r1.7z"
             ARCH=32
           fi
           curl -L "$MINGW_URL" -o "external/mingw-${{ matrix.target.cpu }}.7z"
@@ -143,7 +124,7 @@ jobs:
             git ls-remote "https://github.com/$1" "${2:-HEAD}" | cut -f 1
           }
           nimHash=$(getHash nim-lang/Nim devel)
-          csourcesHash=$(getHash nim-lang/csources)
+          csourcesHash=$(getHash nim-lang/csources_v1)
           echo "::set-output name=nim::$nimHash"
           echo "::set-output name=csources::$csourcesHash"
 
@@ -168,7 +149,7 @@ jobs:
           steps.nim-cache.outputs.cache-hit != 'true'
         uses: actions/checkout@v2
         with:
-          repository: nim-lang/csources
+          repository: nim-lang/csources_v1
           path: csources
           ref: ${{ steps.versions.outputs.csources }}
 
@@ -219,4 +200,4 @@ jobs:
         shell: bash
         run: |
           cd msgpack4nim
-          env TEST_LANG="${{ matrix.target.TEST_LANG }}" nimble test
+          env TEST_LANG="${{ matrix.test_lang}}" nimble test
