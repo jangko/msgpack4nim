@@ -920,3 +920,28 @@ suite "msgpack encoder-decoder":
     else:
       discard z # silence unused warning
       check true
+
+  test "bug #65":
+    type Element = ref object
+      value: int
+
+    proc newElement(value: int): Element =
+      result = new Element
+      result.value = value
+
+    var elementList = initDoublyLinkedList[Element]()
+    elementList.append(newElement(2))
+    elementList.append(newElement(3))
+    elementList.append(newElement(5))
+
+    var strm = MsgStream.init()
+    strm.pack(elementList)
+
+    var sstrm = MsgStream.init(strm.data)
+    var unpackedList: DoublyLinkedList[Element]
+    sstrm.unpack(unpackedList)
+
+    var res: string
+    for e in unpackedList:
+      res.add $e.value
+    check res == "235"

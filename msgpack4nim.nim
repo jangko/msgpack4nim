@@ -903,9 +903,9 @@ template unpack_items_imp*(s: typed, val: typed, msg: typed) =
   let len = s.unpack_array()
   if len < 0: raise conversionError(msg)
 
-  var x: T
   var y: seq[T] = @[]
   for i in 0..len-1:
+    var x: T
     s.unpack(x)
     y.add(x)
   for i in 0..len-1:
