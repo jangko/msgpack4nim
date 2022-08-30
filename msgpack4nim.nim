@@ -48,9 +48,9 @@ proc init*(x: typedesc[MsgStream], cap: int = 0, encodingMode = MSGPACK_OBJ_TO_D
   result.pos = 0
   result.encodingMode = encodingMode
 
-proc init*(x: typedesc[MsgStream], data: string, encodingMode = MSGPACK_OBJ_TO_DEFAULT): MsgStream =
+proc init*(x: typedesc[MsgStream], data: sink string, encodingMode = MSGPACK_OBJ_TO_DEFAULT): MsgStream =
   result = new(x)
-  shallowCopy(result.data, data)
+  result.data = data
   result.pos = 0
   result.encodingMode = encodingMode
 
@@ -73,9 +73,8 @@ proc writeData(s: MsgStream, buffer: pointer, bufLen: int) =
   copyMem(addr(s.data[s.pos]), buffer, bufLen)
   inc(s.pos, bufLen)
 
-proc write*[T](s: MsgStream, val: T) =
-  var y: T
-  shallowCopy(y, val)
+proc write*[T](s: MsgStream, val: sink T) =
+  var y = val
   writeData(s, addr(y), sizeof(y))
 
 proc write*(s: MsgStream, val: string) =
