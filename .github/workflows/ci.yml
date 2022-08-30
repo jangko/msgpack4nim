@@ -22,10 +22,10 @@ jobs:
         include:
           - target:
               os: linux
-            builder: ubuntu-18.04
+            builder: ubuntu-20.04
           - target:
               os: macos
-            builder: macos-10.15
+            builder: macos-11
           - target:
               os: windows
             builder: windows-2019
@@ -38,6 +38,15 @@ jobs:
         with:
           path: msgpack4nim
           submodules: false
+
+      - name: Install build dependencies (MacOS)
+        if: runner.os == 'macos'
+        run: |
+          brew update
+          brew install openssl@1.1
+          ln -s /usr/local/opt/openssl/lib/libcrypto.1.1.dylib /usr/local/lib/
+          ln -s /usr/local/opt/openssl/lib/libssl.1.1.dylib /usr/local/lib/
+          echo '/usr/local/opt/openssl@3/bin' >> $GITHUB_PATH
 
       - name: Install build dependencies (Linux i386)
         if: runner.os == 'Linux' && matrix.target.cpu == 'i386'
