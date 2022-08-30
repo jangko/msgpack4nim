@@ -793,14 +793,9 @@ proc unpack_string*[ByteStream](s: ByteStream): int =
     result = int(s.unstore32())
 
 proc unpack_type*[ByteStream](s: ByteStream, val: var string) =
-  when compiles(isNil(val)):
-    if s.peekChar == pack_value_nil:
-      val = nil
-      return
-  else:
-    if s.peekChar == pack_value_nil:
-      val = ""
-      return
+  if s.peekChar == pack_value_nil:
+    val = ""
+    return
 
   let len = s.unpack_string()
   if len < 0: raise conversionError("string")
