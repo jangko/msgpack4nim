@@ -80,16 +80,16 @@ suite "msgpack specification test":
     if not result: echo toHex(s.data)
 
   proc cmp_str_len(len: int, b: string): bool =
-    result = cmp_len(pack_string[MsgStream], len, b)
+    result = cmp_len(pack_string, len, b)
 
   proc cmp_bin_len(len: int, b: string): bool =
-    result = cmp_len(pack_bin[MsgStream], len, b)
+    result = cmp_len(pack_bin, len, b)
 
   proc cmp_arr_len(len: int, b: string): bool =
-    result = cmp_len(pack_array[MsgStream], len, b)
+    result = cmp_len(pack_array, len, b)
 
   proc cmp_map_len(len: int, b: string): bool =
-    result = cmp_len(pack_map[MsgStream], len, b)
+    result = cmp_len(pack_map, len, b)
 
   proc cmp_ext(len: int, b: string): bool =
     var s = MsgStream.init()

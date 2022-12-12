@@ -1,6 +1,6 @@
 import ../msgpack4nim, json, tables, math, base64, streams
 
-proc toJsonNode*[ByteStream](s: ByteStream): JsonNode =
+proc toJsonNode*(s: Stream): JsonNode =
   let c = ord(s.peekChar)
   case c
   of 0x00..0x7f:
@@ -68,7 +68,7 @@ proc toJsonNode*(data: string): JsonNode =
   var s = MsgStream.init(data)
   result = s.toJsonNode()
 
-proc fromJsonNode*[ByteStream](s: ByteStream, n: JsonNode) =
+proc fromJsonNode*(s: Stream, n: JsonNode) =
   case n.kind
   of JNull:
     s.write(pack_value_nil)
