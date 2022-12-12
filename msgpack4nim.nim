@@ -66,7 +66,7 @@ proc setEncodingMode*(s: MsgStream, encodingMode: EncodingMode) =
 proc getEncodingMode*(s: MsgStream): EncodingMode =
   s.encodingMode
 
-proc writeData(s: MsgStream, buffer: pointer, bufLen: int) =
+proc writeData*(s: MsgStream, buffer: pointer, bufLen: int) =
   if bufLen <= 0: return
   if s.pos + bufLen > s.data.len:
     setLen(s.data, s.pos + bufLen)
