@@ -37,22 +37,29 @@ type
     MSGPACK_OBJ_TO_MAP
     MSGPACK_OBJ_TO_STREAM
 
-  MsgStream* = ref object
-    data*: string
-    pos*: int
+  MsgStream* = ref object of StringStreamObj
     encodingMode: EncodingMode
 
-proc init*(x: typedesc[MsgStream], cap: int = 0, encodingMode = MSGPACK_OBJ_TO_DEFAULT): MsgStream =
-  result = new(x)
-  result.data = newStringOfCap(cap)
-  result.pos = 0
+proc init*(x: typedesc[MsgStream], data: sink string, encodingMode = MSGPACK_OBJ_TO_DEFAULT): MsgStream =
+  result = new x
+  # Initialize StringStream base by copying fields from a new StringStream:
+  var ss = newStringStream()
+  result.data = data
+  result.closeImpl = ss.closeImpl
+  result.atEndImpl = ss.atEndImpl
+  result.setPositionImpl = ss.setPositionImpl
+  result.getPositionImpl = ss.getPositionImpl
+  result.readDataStrImpl = ss.readDataStrImpl
+  when nimvm:
+    discard
+  else:
+    result.readDataImpl = ss.readDataImpl
+    result.peekDataImpl = ss.peekDataImpl
+    result.writeDataImpl = ss.writeDataImpl
   result.encodingMode = encodingMode
 
-proc init*(x: typedesc[MsgStream], data: sink string, encodingMode = MSGPACK_OBJ_TO_DEFAULT): MsgStream =
-  result = new(x)
-  result.data = data
-  result.pos = 0
-  result.encodingMode = encodingMode
+proc init*(x: typedesc[MsgStream], cap: int = 0, encodingMode = MSGPACK_OBJ_TO_DEFAULT): MsgStream =
+  result = init(x, newStringOfCap(cap), encodingMode)
 
 proc initMsgStream*(cap: int = 0, encodingMode = MSGPACK_OBJ_TO_DEFAULT): MsgStream {.deprecated: "use MsgStream.init instead".} =
   result = MsgStream.init(cap, encodingMode)
@@ -65,60 +72,6 @@ proc setEncodingMode*(s: MsgStream, encodingMode: EncodingMode) =
 
 proc getEncodingMode*(s: MsgStream): EncodingMode =
   s.encodingMode
-
-proc writeData(s: MsgStream, buffer: pointer, bufLen: int) =
-  if bufLen <= 0: return
-  if s.pos + bufLen > s.data.len:
-    setLen(s.data, s.pos + bufLen)
-  copyMem(addr(s.data[s.pos]), buffer, bufLen)
-  inc(s.pos, bufLen)
-
-proc write*[T](s: MsgStream, val: sink T) =
-  var y = val
-  writeData(s, addr(y), sizeof(y))
-
-proc write*(s: MsgStream, val: string) =
-  if val.len > 0: writeData(s, unsafeAddr val[0], val.len)
-
-proc readData(s: MsgStream, buffer: pointer, bufLen: int): int =
-  result = min(bufLen, s.data.len - s.pos)
-  if result > 0:
-    copyMem(buffer, addr(s.data[s.pos]), result)
-    inc(s.pos, result)
-  else:
-    result = 0
-
-proc read*[T](s: MsgStream, result: var T) =
-  if s.readData(addr(result), sizeof(T)) != sizeof(T):
-    doAssert(false)
-
-proc readStr*(s: MsgStream, length: int): string =
-  result = newString(length)
-  if length != 0:
-    var L = s.readData(addr(result[0]), length)
-    if L != length: raise newException(IOError, "string len mismatch")
-
-proc readChar*(s: MsgStream): char =
-  s.read(result)
-
-proc readInt16*(s: MsgStream): int16 =
-  s.read(result)
-
-proc readInt32*(s: MsgStream): int32 =
-  s.read(result)
-
-proc readInt64*(s: MsgStream): int64 =
-  s.read(result)
-
-proc peekChar*(s: MsgStream): char =
-  if s.pos < s.data.len: result = s.data[s.pos]
-  else: result = chr(0)
-
-proc setPosition*(s: MsgStream, pos: int) =
-  s.pos = clamp(pos, 0, s.data.len)
-
-proc atEnd*(s: MsgStream): bool =
-  return s.pos >= s.data.len
 
 proc conversionError*(msg: string): ref ObjectConversionError =
   new(result)
