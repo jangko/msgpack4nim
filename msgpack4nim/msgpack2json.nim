@@ -1,4 +1,4 @@
-import ../msgpack4nim, json, tables, math, base64
+import ../msgpack4nim, json, tables, math, base64, streams
 
 proc toJsonNode*[ByteStream](s: ByteStream): JsonNode =
   let c = ord(s.peekChar)

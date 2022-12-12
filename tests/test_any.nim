@@ -1,4 +1,4 @@
-import unittest, strutils, strtabs
+import unittest, strutils, strtabs, streams
 import ../msgpack4nim/[msgpack4collection, msgpack2any]
 import ../msgpack4nim
 
