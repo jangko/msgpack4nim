@@ -22,7 +22,7 @@ proc toJsonNode*[ByteStream](s: ByteStream): JsonNode =
       result.elems[i] = toJsonNode(s)
   of 0xa0..0xbf, 0xd9..0xdb:
     let len = s.unpack_string()
-    result = newJString(s.readStr(len))
+    result = newJString(s.readExactStr(len))
   of 0xc0:
     result = newJNull()
     discard s.readChar()
@@ -38,13 +38,13 @@ proc toJsonNode*[ByteStream](s: ByteStream): JsonNode =
   of 0xc4..0xc6:
     result = newJObject()
     let binLen = s.unpack_bin()
-    let data = base64.encode(s.readStr(binLen))
+    let data = base64.encode(s.readExactStr(binLen))
     result.add("type", newJString("bin"))
     result.add("len", newJInt(binLen.BiggestInt))
     result.add("data", newJString(data))
   of 0xc7..0xc9, 0xd4..0xd8:
     let (exttype, extlen) = s.unpack_ext()
-    let data = base64.encode(s.readStr(extlen))
+    let data = base64.encode(s.readExactStr(extlen))
     result = newJObject()
     result.add("type", newJString("ext"))
     result.add("len", newJInt(extLen.BiggestInt))

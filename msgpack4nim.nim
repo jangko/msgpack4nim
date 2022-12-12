@@ -73,6 +73,18 @@ proc setEncodingMode*(s: MsgStream, encodingMode: EncodingMode) =
 proc getEncodingMode*(s: MsgStream): EncodingMode =
   s.encodingMode
 
+
+proc readExactStr*(s: Stream, length: int): string =
+  ## Reads a string from a stream, like `Stream.readStr`, but raises IOError if it's truncated.
+  result = readStr(s, length)
+  if result.len != length: raise newException(IOError, "string len mismatch")
+
+proc readExactStr*(s: Stream, length: int, str: var string) =
+  ## Reads a string from a stream, like `Stream.readStr`, but raises IOError if it's truncated.
+  readStr(s, length, str)
+  if str.len != length: raise newException(IOError, "string len mismatch")
+
+
 proc conversionError*(msg: string): ref ObjectConversionError =
   new(result)
   result.msg = msg
@@ -752,7 +764,7 @@ proc unpack_type*[ByteStream](s: ByteStream, val: var string) =
 
   let len = s.unpack_string()
   if len < 0: raise conversionError("string")
-  val = s.readStr(len)
+  val = s.readExactStr(len)
 
 proc unpack_type*[ByteStream](s: ByteStream, val: var uint8) =
   val = s.unpack_imp_uint8()
@@ -984,13 +996,13 @@ proc skip_msg*[ByteStream](s: ByteStream) =
       skip_msg(s)
   of 0xa0..0xbf, 0xd9..0xdb:
     len = s.unpack_string()
-    discard s.readStr(len)
+    discard s.readExactStr(len)
   of 0xc4..0xc6:
     len = s.unpack_bin()
-    discard s.readStr(len)
+    discard s.readExactStr(len)
   of 0xc7..0xc9, 0xd4..0xd8:
     let (_, extlen) = s.unpack_ext()
-    discard s.readStr(extlen)
+    discard s.readExactStr(extlen)
   of 0xca:
     discard s.unpack_imp_float32()
   of 0xcb:
@@ -1190,7 +1202,7 @@ proc stringify*[ByteStream](s: ByteStream, zz: ByteStream) =
     zz.write(" ]")
   of 0xa0..0xbf:
     len = s.unpack_string()
-    let str = s.readStr(len)
+    let str = s.readExactStr(len)
     zz.write("\"" & str & "\"")
   of 0xc0:
     zz.write("null")
@@ -1207,13 +1219,13 @@ proc stringify*[ByteStream](s: ByteStream, zz: ByteStream) =
   of 0xc4..0xc6:
     len = s.unpack_bin()
     zz.write("BIN: ")
-    let str = s.readStr(len)
+    let str = s.readExactStr(len)
     for cc in str:
       zz.write(toHex(ord(cc), 2))
   of 0xc7..0xc9:
     let (exttype, extlen) = s.unpack_ext()
     zz.write("EXT: " & toHex(exttype, 2) & " ")
-    let str = s.readStr(extlen)
+    let str = s.readExactStr(extlen)
     for cc in str:
       zz.write(toHex(ord(cc), 2))
   of 0xca:
@@ -1231,12 +1243,12 @@ proc stringify*[ByteStream](s: ByteStream, zz: ByteStream) =
   of 0xd4..0xd8:
     let (exttype, extlen) = s.unpack_ext()
     zz.write("EXT: " & toHex(exttype, 2) & " ")
-    let str = s.readStr(extlen)
+    let str = s.readExactStr(extlen)
     for cc in str:
       zz.write(toHex(ord(cc), 2))
   of 0xd9..0xdb:
     len = s.unpack_string()
-    let str = s.readStr(len)
+    let str = s.readExactStr(len)
     zz.write("\"" & str & "\"")
   of 0xdc..0xdd:
     len = s.unpack_array()

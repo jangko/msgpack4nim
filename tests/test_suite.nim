@@ -42,7 +42,7 @@ proc testBool(v, m: JsonNode): bool =
 proc parseBin(data: string): string =
   var s = MsgStream.init(data)
   let len = s.unpack_bin()
-  result = s.readStr(len)
+  result = s.readExactStr(len)
 
 proc testBinary(v, m: JsonNode): bool =
   doAssert(v.kind == JString)
@@ -110,7 +110,7 @@ proc testAny(v, m: JsonNode): bool =
 proc parseExt(data: string): (int, string) =
   var s = MsgStream.init(data)
   let (typ, len) = s.unpack_ext()
-  result = (typ.int, s.readStr(len))
+  result = (typ.int, s.readExactStr(len))
 
 proc testExt(v, m: JsonNode): bool =
   doAssert(v.kind == JArray)
