@@ -296,7 +296,7 @@ proc toAny*[ByteStream](s: ByteStream): MsgAny =
   of 0xa0..0xbf, 0xd9..0xdb:
     let len = s.unpack_string()
     result = newMsgAny(msgString)
-    result.stringVal = s.readStr(len)
+    result.stringVal = s.readExactStr(len)
   of 0xc0:
     result = newMsgAny(msgNull)
     discard s.readChar()
@@ -314,13 +314,13 @@ proc toAny*[ByteStream](s: ByteStream): MsgAny =
   of 0xc4..0xc6:
     result = newMsgAny(msgBin)
     result.binLen = s.unpack_bin()
-    result.binData = s.readStr(result.binLen)
+    result.binData = s.readExactStr(result.binLen)
   of 0xc7..0xc9, 0xd4..0xd8:
     let (exttype, extlen) = s.unpack_ext()
     result = newMsgAny(msgExt)
     result.extLen = extlen
     result.extType = exttype
-    result.extData = s.readStr(extlen)
+    result.extData = s.readExactStr(extlen)
   of 0xca:
     result = newMsgAny(msgFloat32)
     result.float32Val = s.unpack_imp_float32()

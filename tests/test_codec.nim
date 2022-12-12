@@ -96,7 +96,7 @@ proc pack_type[ByteStream](s: ByteStream, v: Guid) =
 
 proc unpack_type[ByteStream](s: ByteStream, v: var Guid) =
   let L = s.unpack_bin()
-  v = Guid(s.readStr(L))
+  v = Guid(s.readExactStr(L))
 
 suite "msgpack encoder-decoder":
   test "ordinal 8 bit":
@@ -794,13 +794,13 @@ suite "msgpack encoder-decoder":
     s.setPosition(0)
     #unpack_ext return tuple[exttype:uint8, len: int]
     let (extype, extlen) = s.unpack_ext()
-    var extbody = s.readStr(extlen)
+    var extbody = s.readExactStr(extlen)
 
     check extbody == body
     check extype == exttype0
 
     let binlen = s.unpack_bin()
-    var binbody = s.readStr(binlen)
+    var binbody = s.readExactStr(binlen)
 
     check binbody == body
 
