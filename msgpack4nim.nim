@@ -85,6 +85,11 @@ proc readExactStr*(s: Stream, length: int, str: var string) =
   if str.len != length: raise newException(IOError, "string len mismatch")
 
 
+# Forward declarations:
+proc unpack_bin*(s: Stream): int
+proc unpack_ext*(s: Stream): tuple[exttype: int8, len: int]
+
+
 proc conversionError*(msg: string): ref ObjectConversionError =
   new(result)
   result.msg = msg
@@ -146,25 +151,25 @@ when system.cpuEndian == littleEndian:
   proc take8_32(val: uint32): uint8 {.inline.} = uint8(val and 0xFF)
   proc take8_64(val: uint64): uint8 {.inline.} = uint8(val and 0xFF)
 
-  proc store16[ByteStream](s: ByteStream, val: uint16) =
+  proc store16(s: Stream, val: uint16) =
     var res: uint16
     swapEndian16(addr(res), unsafeAddr(val))
     s.write(res)
-  proc store32[ByteStream](s: ByteStream, val: uint32) =
+  proc store32(s: Stream, val: uint32) =
     var res: uint32
     swapEndian32(addr(res), unsafeAddr(val))
     s.write(res)
-  proc store64[ByteStream](s: ByteStream, val: uint64) =
+  proc store64(s: Stream, val: uint64) =
     var res: uint64
     swapEndian64(addr(res), unsafeAddr(val))
     s.write(res)
-  proc unstore16[ByteStream](s: ByteStream): uint16 =
+  proc unstore16(s: Stream): uint16 =
     var tmp: uint16 = cast[uint16](s.readInt16)
     swapEndian16(addr(result), addr(tmp))
-  proc unstore32[ByteStream](s: ByteStream): uint32 =
+  proc unstore32(s: Stream): uint32 =
     var tmp: uint32 = cast[uint32](s.readInt32)
     swapEndian32(addr(result), addr(tmp))
-  proc unstore64[ByteStream](s: ByteStream): uint64 =
+  proc unstore64(s: Stream): uint64 =
     var tmp: uint64 = cast[uint64](s.readInt64)
     swapEndian64(addr(result), addr(tmp))
 else:
@@ -173,26 +178,26 @@ else:
   proc take8_32(val: uint32): uint8 {.inline.} = (val shr 24) and 0xFF
   proc take8_64(val: uint64): uint8 {.inline.} = uint8((val shr 56) and 0xFF)
 
-  proc store16[ByteStream](s: ByteStream, val: uint16) = s.write(val)
-  proc store32[ByteStream](s: ByteStream, val: uint32) = s.write(val)
-  proc store64[ByteStream](s: ByteStream, val: uint64) = s.write(val)
-  proc unstore16[ByteStream](s: ByteStream): uint16 = cast[uint16](s.readInt16)
-  proc unstore32[ByteStream](s: ByteStream): uint32 = cast[uint32](s.readInt32)
-  proc unstore64[ByteStream](s: ByteStream): uint64 = cast[uint64](s.readInt64)
+  proc store16(s: Stream, val: uint16) = s.write(val)
+  proc store32(s: Stream, val: uint32) = s.write(val)
+  proc store64(s: Stream, val: uint64) = s.write(val)
+  proc unstore16(s: Stream): uint16 = cast[uint16](s.readInt16)
+  proc unstore32(s: Stream): uint32 = cast[uint32](s.readInt32)
+  proc unstore64(s: Stream): uint64 = cast[uint64](s.readInt64)
 
 proc take8_8[T:uint8|char|int8](val: T): uint8 {.inline.} = uint8(val)
 proc take16_8[T:uint8|char|int8](val: T): uint16 {.inline.} = uint16(val)
 proc take32_8[T:uint8|char|int8](val: T): uint32 {.inline.} = uint32(val)
 proc take64_8[T:uint8|char|int8](val: T): uint64 {.inline.} = uint64(val)
 
-proc pack_bool*[ByteStream](s: ByteStream, val: bool) =
+proc pack_bool*(s: Stream, val: bool) =
   if val: s.write(chr(0xc3))
   else: s.write(chr(0xc2))
 
-proc pack_imp_nil*[ByteStream](s: ByteStream) =
+proc pack_imp_nil*(s: Stream) =
   s.write(chr(0xc0))
 
-proc pack_imp_uint8*[ByteStream](s: ByteStream, val: uint8) =
+proc pack_imp_uint8*(s: Stream, val: uint8) =
   if val < uint8(1 shl 7):
     #fixnum
     s.write(take8_8(val))
@@ -201,14 +206,14 @@ proc pack_imp_uint8*[ByteStream](s: ByteStream, val: uint8) =
     s.write(chr(0xcc))
     s.write(take8_8(val))
 
-proc unpack_imp_uint8*[ByteStream](s: ByteStream): uint8 =
+proc unpack_imp_uint8*(s: Stream): uint8 =
   let c = s.readChar
   if c < chr(128): result = take8_8(c)
   elif c == chr(0xcc):
     result = uint8(s.readChar)
   else: raise conversionError("uint8")
 
-proc pack_imp_uint16*[ByteStream](s: ByteStream, val: uint16) =
+proc pack_imp_uint16*(s: Stream, val: uint16) =
   if val < uint16(1 shl 7):
     #fixnum
     s.write(take8_16(val))
@@ -221,7 +226,7 @@ proc pack_imp_uint16*[ByteStream](s: ByteStream, val: uint16) =
     s.write(chr(0xcd))
     s.store16(val)
 
-proc unpack_imp_uint16*[ByteStream](s: ByteStream): uint16 =
+proc unpack_imp_uint16*(s: Stream): uint16 =
   let c = s.readChar
   if c < chr(128): result = take16_8(c)
   elif c == chr(0xcc):
@@ -230,7 +235,7 @@ proc unpack_imp_uint16*[ByteStream](s: ByteStream): uint16 =
     result = s.unstore16()
   else: raise conversionError("uint16")
 
-proc pack_imp_uint32*[ByteStream](s: ByteStream, val: uint32) =
+proc pack_imp_uint32*(s: Stream, val: uint32) =
   if val < uint32(1 shl 8):
     if val < uint32(1 shl 7):
       #fixnum
@@ -249,7 +254,7 @@ proc pack_imp_uint32*[ByteStream](s: ByteStream, val: uint32) =
       s.write(chr(0xce))
       s.store32(val)
 
-proc unpack_imp_uint32*[ByteStream](s: ByteStream): uint32 =
+proc unpack_imp_uint32*(s: Stream): uint32 =
   let c = s.readChar
   if c < chr(128): result = take32_8(c)
   elif c == chr(0xcc):
@@ -260,7 +265,7 @@ proc unpack_imp_uint32*[ByteStream](s: ByteStream): uint32 =
     result = s.unstore32()
   else: raise conversionError("uint32")
 
-proc pack_imp_uint64*[ByteStream](s: ByteStream, val: uint64) =
+proc pack_imp_uint64*(s: Stream, val: uint64) =
   if val < uint64(1 shl 8):
     if val < uint64(1 shl 7):
       #fixnum
@@ -283,7 +288,7 @@ proc pack_imp_uint64*[ByteStream](s: ByteStream, val: uint64) =
       s.write(chr(0xcf))
       s.store64(val)
 
-proc unpack_imp_uint64*[ByteStream](s: ByteStream): uint64 =
+proc unpack_imp_uint64*(s: Stream): uint64 =
   let c = s.readChar
   if c < chr(128): result = take64_8(c)
   elif c == chr(0xcc):
@@ -296,7 +301,7 @@ proc unpack_imp_uint64*[ByteStream](s: ByteStream): uint64 =
     result = s.unstore64()
   else: raise conversionError("uint64")
 
-proc pack_imp_int8*[ByteStream](s: ByteStream, val: int8) =
+proc pack_imp_int8*(s: Stream, val: int8) =
   if val < -(1 shl 5):
     #signed 8
     s.write(chr(0xd0))
@@ -305,7 +310,7 @@ proc pack_imp_int8*[ByteStream](s: ByteStream, val: int8) =
     #fixnum
     s.write(take8_8(cast[uint8](val)))
 
-proc unpack_imp_int8*[ByteStream](s: ByteStream): int8 =
+proc unpack_imp_int8*(s: Stream): int8 =
   let c = s.readChar
   if c >= chr(0xe0) and c <= chr(0xff):
     result = cast[int8](c)
@@ -315,7 +320,7 @@ proc unpack_imp_int8*[ByteStream](s: ByteStream): int8 =
     result = cast[int8](s.readChar)
   else: raise conversionError("int8")
 
-proc pack_imp_int16*[ByteStream](s: ByteStream, val: int16) =
+proc pack_imp_int16*(s: Stream, val: int16) =
   if val < -(1 shl 5):
     if val < -(1 shl 7):
       #signed 16
@@ -340,7 +345,7 @@ proc pack_imp_int16*[ByteStream](s: ByteStream, val: int16) =
       s.write(chr(0xcd))
       s.store16(uint16(val))
 
-proc unpack_imp_int16*[ByteStream](s: ByteStream): int16 =
+proc unpack_imp_int16*(s: Stream): int16 =
   let c = s.readChar
   if c >= chr(0xe0) and c <= chr(0xff):
     result = int16(cast[int8](c))
@@ -356,7 +361,7 @@ proc unpack_imp_int16*[ByteStream](s: ByteStream): int16 =
     result = cast[int16](s.unstore16)
   else: raise conversionError("int16")
 
-proc pack_imp_int32*[ByteStream](s: ByteStream, val: int32) =
+proc pack_imp_int32*(s: Stream, val: int32) =
   if val < -(1 shl 5):
     if val < -(1 shl 15):
       #signed 32
@@ -389,7 +394,7 @@ proc pack_imp_int32*[ByteStream](s: ByteStream, val: int32) =
       s.write(chr(0xce))
       s.store32(uint32(val))
 
-proc unpack_imp_int32*[ByteStream](s: ByteStream): int32 =
+proc unpack_imp_int32*(s: Stream): int32 =
   let c = s.readChar
   if c >= chr(0xe0) and c <= chr(0xff):
     result = int32(cast[int8](c))
@@ -409,7 +414,7 @@ proc unpack_imp_int32*[ByteStream](s: ByteStream): int32 =
     result = cast[int32](s.unstore32)
   else: raise conversionError("int32")
 
-proc pack_imp_int64*[ByteStream](s: ByteStream, val: int64) =
+proc pack_imp_int64*(s: Stream, val: int64) =
   if val < -(1 shl 5):
     if val < -(1'i64 shl 31):
       #signed 64
@@ -450,7 +455,7 @@ proc pack_imp_int64*[ByteStream](s: ByteStream, val: int64) =
       s.write(chr(0xcf))
       s.store64(uint64(val))
 
-proc unpack_imp_int64*[ByteStream](s: ByteStream): int64 =
+proc unpack_imp_int64*(s: Stream): int64 =
   let c = s.readChar
   if c >= chr(0xe0) and c <= chr(0xff):
     result = int64(cast[int8](c))
@@ -474,14 +479,14 @@ proc unpack_imp_int64*[ByteStream](s: ByteStream): int64 =
     result = cast[int64](s.unstore64)
   else: raise conversionError("int64")
 
-proc pack_imp_int*[ByteStream](s: ByteStream, val: int) =
+proc pack_imp_int*(s: Stream, val: int) =
   case sizeof(val)
   of 1: s.pack_imp_int8(int8(val))
   of 2: s.pack_imp_int16(int16(val))
   of 4: s.pack_imp_int32(int32(val))
   else: s.pack_imp_int64(int64(val))
 
-proc pack_array*[ByteStream](s: ByteStream, len: int) =
+proc pack_array*(s: Stream, len: int) =
   if len <= 0x0F:
     s.write(chr(0b10010000 or (len and 0x0F)))
   elif len > 0x0F and len <= 0xFFFF:
@@ -491,7 +496,7 @@ proc pack_array*[ByteStream](s: ByteStream, len: int) =
     s.write(chr(0xdd))
     s.store32(uint32(len))
 
-proc pack_map*[ByteStream](s: ByteStream, len: int) =
+proc pack_map*(s: Stream, len: int) =
   if len <= 0x0F:
     s.write(chr(0b10000000 or (len and 0x0F)))
   elif len > 0x0F and len <= 0xFFFF:
@@ -501,7 +506,7 @@ proc pack_map*[ByteStream](s: ByteStream, len: int) =
     s.write(chr(0xdf))
     s.store32(uint32(len))
 
-proc pack_bin*[ByteStream](s: ByteStream, len: int) =
+proc pack_bin*(s: Stream, len: int) =
   if len <= 0xFF:
     s.write(chr(0xc4))
     s.write(uint8(len))
@@ -512,7 +517,7 @@ proc pack_bin*[ByteStream](s: ByteStream, len: int) =
     s.write(chr(0xc6))
     s.store32(uint32(len))
 
-proc pack_ext*[ByteStream](s: ByteStream, len: int, exttype: int8) =
+proc pack_ext*(s: Stream, len: int, exttype: int8) =
   case len
   of 1:
     s.write(chr(0xd4))
@@ -543,7 +548,7 @@ proc pack_ext*[ByteStream](s: ByteStream, len: int, exttype: int8) =
       s.store32(uint32(len))
       s.write(exttype)
 
-proc pack_string*[ByteStream](s: ByteStream, len: int) =
+proc pack_string*(s: Stream, len: int) =
   if len < 32:
     var d = uint8(0xa0) or uint8(len)
     s.write(take8_8(d))
@@ -557,13 +562,13 @@ proc pack_string*[ByteStream](s: ByteStream, len: int) =
     s.write(chr(0xdb))
     s.store32(uint32(len))
 
-proc pack_type*[ByteStream](s: ByteStream, val: bool) =
+proc pack_type*(s: Stream, val: bool) =
   s.pack_bool(val)
 
-proc pack_type*[ByteStream](s: ByteStream, val: char) =
+proc pack_type*(s: Stream, val: char) =
   s.pack_imp_uint8(uint8(val))
 
-proc pack_type*[ByteStream](s: ByteStream, val: string) =
+proc pack_type*(s: Stream, val: string) =
   when compiles(isNil(val)):
     if isNil(val): s.pack_imp_nil()
     else:
@@ -573,31 +578,31 @@ proc pack_type*[ByteStream](s: ByteStream, val: string) =
     s.pack_string(val.len)
     s.write(val)
 
-proc pack_type*[ByteStream](s: ByteStream, val: uint8) =
+proc pack_type*(s: Stream, val: uint8) =
   s.pack_imp_uint8(val)
 
-proc pack_type*[ByteStream](s: ByteStream, val: uint16) =
+proc pack_type*(s: Stream, val: uint16) =
   s.pack_imp_uint16(val)
 
-proc pack_type*[ByteStream](s: ByteStream, val: uint32) =
+proc pack_type*(s: Stream, val: uint32) =
   s.pack_imp_uint32(val)
 
-proc pack_type*[ByteStream](s: ByteStream, val: uint64) =
+proc pack_type*(s: Stream, val: uint64) =
   s.pack_imp_uint64(val)
 
-proc pack_type*[ByteStream](s: ByteStream, val: int8) =
+proc pack_type*(s: Stream, val: int8) =
   s.pack_imp_int8(val)
 
-proc pack_type*[ByteStream](s: ByteStream, val: int16) =
+proc pack_type*(s: Stream, val: int16) =
   s.pack_imp_int16(val)
 
-proc pack_type*[ByteStream](s: ByteStream, val: int32) =
+proc pack_type*(s: Stream, val: int32) =
   s.pack_imp_int32(val)
 
-proc pack_type*[ByteStream](s: ByteStream, val: int64) =
+proc pack_type*(s: Stream, val: int64) =
   s.pack_imp_int64(val)
 
-proc pack_int_imp_select[ByteStream, T](s: ByteStream, val: T) =
+proc pack_int_imp_select[Stream, T](s: Stream, val: T) =
   when sizeof(val) == 1:
     s.pack_imp_int8(int8(val))
   elif sizeof(val) == 2:
@@ -607,7 +612,7 @@ proc pack_int_imp_select[ByteStream, T](s: ByteStream, val: T) =
   else:
     s.pack_imp_int64(int64(val))
 
-proc pack_uint_imp_select[ByteStream, T](s: ByteStream, val: T) =
+proc pack_uint_imp_select[Stream, T](s: Stream, val: T) =
   if sizeof(T) == 1:
     s.pack_imp_uint8(cast[uint8](val))
   elif sizeof(T) == 2:
@@ -617,29 +622,29 @@ proc pack_uint_imp_select[ByteStream, T](s: ByteStream, val: T) =
   else:
     s.pack_imp_uint64(cast[uint64](val))
 
-proc pack_type*[ByteStream](s: ByteStream, val: int) =
+proc pack_type*(s: Stream, val: int) =
   pack_int_imp_select(s, val)
 
-proc pack_type*[ByteStream](s: ByteStream, val: uint) =
+proc pack_type*(s: Stream, val: uint) =
   pack_uint_imp_select(s, val)
 
-proc pack_imp_float32[ByteStream](s: ByteStream, val: float32) {.inline.} =
+proc pack_imp_float32(s: Stream, val: float32) {.inline.} =
   let tmp = cast[uint32](val)
   s.write(chr(0xca))
   s.store32(tmp)
 
-proc pack_imp_float64[ByteStream](s: ByteStream, val: float64) {.inline.} =
+proc pack_imp_float64(s: Stream, val: float64) {.inline.} =
   let tmp = cast[uint64](val)
   s.write(chr(0xcb))
   s.store64(tmp)
 
-proc pack_type*[ByteStream](s: ByteStream, val: float32) =
+proc pack_type*(s: Stream, val: float32) =
   s.pack_imp_float32(val)
 
-proc pack_type*[ByteStream](s: ByteStream, val: float64) =
+proc pack_type*(s: Stream, val: float64) =
   s.pack_imp_float64(val)
 
-proc pack_type*[ByteStream](s: ByteStream, val: SomeFloat) =
+proc pack_type*(s: Stream, val: SomeFloat) =
   when sizeof(val) == sizeof(float32):
     s.pack_imp_float32(float32(val))
   elif sizeof(val) == sizeof(float64):
@@ -647,12 +652,12 @@ proc pack_type*[ByteStream](s: ByteStream, val: SomeFloat) =
   else:
     raise conversionError("float")
 
-proc pack_type*[ByteStream, T](s: ByteStream, val: set[T]) =
+proc pack_type*[Stream, T](s: Stream, val: set[T]) =
   s.pack_array(card(val))
   for e in items(val):
     s.pack_imp_uint64(uint64(e))
 
-proc pack_items_imp*[ByteStream, T](s: ByteStream, val: T) {.inline.} =
+proc pack_items_imp*[Stream, T](s: Stream, val: T) {.inline.} =
   var ss = MsgStream.init(sizeof(T))
   var count = 0
   for i in items(val):
@@ -661,17 +666,17 @@ proc pack_items_imp*[ByteStream, T](s: ByteStream, val: T) {.inline.} =
   s.pack_array(count)
   s.write(ss.data)
 
-proc pack_map_imp*[ByteStream, T](s: ByteStream, val: T) {.inline.} =
+proc pack_map_imp*[Stream, T](s: Stream, val: T) {.inline.} =
   s.pack_map(val.len)
   for k,v in pairs(val):
     s.pack_type undistinct_pack(k)
     s.pack_type undistinct_pack(v)
 
-proc pack_type*[ByteStream, T](s: ByteStream, val: openArray[T]) =
+proc pack_type*[Stream, T](s: Stream, val: openArray[T]) =
   s.pack_array(val.len)
   for i in 0..val.len-1: s.pack_type undistinct_pack(val[i])
 
-proc pack_type*[ByteStream, T](s: ByteStream, val: seq[T]) =
+proc pack_type*[Stream, T](s: Stream, val: seq[T]) =
   when compiles(isNil(val)):
     if isNil(val): s.pack_imp_nil()
     else:
@@ -681,13 +686,13 @@ proc pack_type*[ByteStream, T](s: ByteStream, val: seq[T]) =
     s.pack_array(val.len)
     for i in 0..val.len-1: s.pack_type undistinct_pack(val[i])
 
-proc pack_type*[ByteStream; T: enum|range](s: ByteStream, val: T) =
+proc pack_type*[Stream; T: enum|range](s: Stream, val: T) =
   when val is range:
     pack_int_imp_select(s, val.int64)
   else:
     pack_int_imp_select(s, val)
 
-proc pack_type*[ByteStream; T: tuple|object](s: ByteStream, val: T) =
+proc pack_type*[Stream; T: tuple|object](s: Stream, val: T) =
   var len = 0
   for field in fields(val):
     inc(len)
@@ -706,7 +711,7 @@ proc pack_type*[ByteStream; T: tuple|object](s: ByteStream, val: T) =
       for field in fields(val):
         s.pack_type undistinct_pack(field)
 
-  when ByteStream is MsgStream:
+  when Stream is MsgStream:
     case s.encodingMode
     of MSGPACK_OBJ_TO_ARRAY:
       s.pack_array(len)
@@ -725,28 +730,28 @@ proc pack_type*[ByteStream; T: tuple|object](s: ByteStream, val: T) =
   else:
     dry_and_wet()
 
-proc pack_type*[ByteStream; T: ref](s: ByteStream, val: T) =
+proc pack_type*[Stream; T: ref](s: Stream, val: T) =
   if isNil(val): s.pack_imp_nil()
   else: s.pack_type(val[])
 
-proc pack_type*[ByteStream, T](s: ByteStream, val: ptr T) =
+proc pack_type*[Stream, T](s: Stream, val: ptr T) =
   if isNil(val): s.pack_imp_nil()
   else: s.pack_type(val[])
 
-proc unpack_type*[ByteStream](s: ByteStream, val: var bool) =
+proc unpack_type*(s: Stream, val: var bool) =
   let c = s.readChar
   if c == chr(0xc3): val = true
   elif c == chr(0xc2): val = false
   else: raise conversionError("bool")
 
-proc unpack_type*[ByteStream](s: ByteStream, val: var char) =
+proc unpack_type*(s: Stream, val: var char) =
   let c = s.readChar
   if c < chr(128): val = c
   elif c == chr(0xcc):
     val = s.readChar
   else: raise conversionError("char")
 
-proc unpack_string*[ByteStream](s: ByteStream): int =
+proc unpack_string*(s: Stream): int =
   result = -1
   let c = s.readChar
   if c >= chr(0xa0) and c <= chr(0xbf): result = ord(c) and 0x1f
@@ -757,7 +762,7 @@ proc unpack_string*[ByteStream](s: ByteStream): int =
   elif c == chr(0xdb):
     result = int(s.unstore32())
 
-proc unpack_type*[ByteStream](s: ByteStream, val: var string) =
+proc unpack_type*(s: Stream, val: var string) =
   if s.peekChar == pack_value_nil:
     val = ""
     return
@@ -766,31 +771,31 @@ proc unpack_type*[ByteStream](s: ByteStream, val: var string) =
   if len < 0: raise conversionError("string")
   val = s.readExactStr(len)
 
-proc unpack_type*[ByteStream](s: ByteStream, val: var uint8) =
+proc unpack_type*(s: Stream, val: var uint8) =
   val = s.unpack_imp_uint8()
 
-proc unpack_type*[ByteStream](s: ByteStream, val: var uint16) =
+proc unpack_type*(s: Stream, val: var uint16) =
   val = s.unpack_imp_uint16()
 
-proc unpack_type*[ByteStream](s: ByteStream, val: var uint32) =
+proc unpack_type*(s: Stream, val: var uint32) =
   val = s.unpack_imp_uint32()
 
-proc unpack_type*[ByteStream](s: ByteStream, val: var uint64) =
+proc unpack_type*(s: Stream, val: var uint64) =
   val = s.unpack_imp_uint64()
 
-proc unpack_type*[ByteStream](s: ByteStream, val: var int8) =
+proc unpack_type*(s: Stream, val: var int8) =
   val = s.unpack_imp_int8()
 
-proc unpack_type*[ByteStream](s: ByteStream, val: var int16) =
+proc unpack_type*(s: Stream, val: var int16) =
   val = s.unpack_imp_int16()
 
-proc unpack_type*[ByteStream](s: ByteStream, val: var int32) =
+proc unpack_type*(s: Stream, val: var int32) =
   val = s.unpack_imp_int32()
 
-proc unpack_type*[ByteStream](s: ByteStream, val: var int64) =
+proc unpack_type*(s: Stream, val: var int64) =
   val = s.unpack_imp_int64()
 
-proc unpack_int_imp_select[ByteStream, T](s: ByteStream, val: var T) =
+proc unpack_int_imp_select[Stream, T](s: Stream, val: var T) =
   when sizeof(T) == 1:
     val = T(s.unpack_imp_int8())
   elif sizeof(T) == 2:
@@ -800,10 +805,10 @@ proc unpack_int_imp_select[ByteStream, T](s: ByteStream, val: var T) =
   else:
     val = int(s.unpack_imp_int64())
 
-proc unpack_type*[ByteStream](s: ByteStream, val: var int) =
+proc unpack_type*(s: Stream, val: var int) =
   unpack_int_imp_select(s, val)
 
-proc unpack_type*[ByteStream](s: ByteStream, val: var uint) =
+proc unpack_type*(s: Stream, val: var uint) =
   if sizeof(val) == 1:
     val = s.unpack_imp_uint8()
   elif sizeof(val) == 2:
@@ -813,27 +818,27 @@ proc unpack_type*[ByteStream](s: ByteStream, val: var uint) =
   else:
     val = uint(s.unpack_imp_uint64())
 
-proc unpack_imp_float32*[ByteStream](s: ByteStream): float32 {.inline.} =
+proc unpack_imp_float32*(s: Stream): float32 {.inline.} =
   let c = s.readChar
   if c == chr(0xca):
     result = cast[float32](s.unstore32)
   else:
     raise conversionError("float32")
 
-proc unpack_imp_float64*[ByteStream](s: ByteStream): float64 {.inline.} =
+proc unpack_imp_float64*(s: Stream): float64 {.inline.} =
   let c = s.readChar
   if c == chr(0xcb):
     result = cast[float64](s.unstore64)
   else:
     raise conversionError("float64")
 
-proc unpack_type*[ByteStream](s: ByteStream, val: var float32) =
+proc unpack_type*(s: Stream, val: var float32) =
   val = s.unpack_imp_float32()
 
-proc unpack_type*[ByteStream](s: ByteStream, val: var float64) =
+proc unpack_type*(s: Stream, val: var float64) =
   val = s.unpack_imp_float64()
 
-proc unpack_type*[ByteStream](s: ByteStream, val: var SomeFloat) =
+proc unpack_type*(s: Stream, val: var SomeFloat) =
   when sizeof(val) == sizeof(float32):
     result = float32(s.unpack_imp_float32())
   elif sizeof(val) == sizeof(float64):
@@ -841,7 +846,7 @@ proc unpack_type*[ByteStream](s: ByteStream, val: var SomeFloat) =
   else:
     raise conversionError("float")
 
-proc unpack_array*[ByteStream](s: ByteStream): int =
+proc unpack_array*(s: Stream): int =
   result = -1
   let c = s.readChar
   if c >= chr(0x90) and c <= chr(0x9f): result = ord(c) and 0x0f
@@ -850,7 +855,7 @@ proc unpack_array*[ByteStream](s: ByteStream): int =
   elif c == chr(0xdd):
     result = int(s.unstore32())
 
-proc unpack_type*[ByteStream, T](s: ByteStream, val: var set[T]) =
+proc unpack_type*[Stream, T](s: Stream, val: var set[T]) =
   let len = s.unpack_array()
   if len < 0: raise conversionError("set")
   var x: T
@@ -870,7 +875,7 @@ template unpack_items_imp*(s: typed, val: typed, msg: typed) =
   for i in 0..len-1:
     val.prepend(y.pop())
 
-proc unpack_map*[ByteStream](s: ByteStream): int =
+proc unpack_map*(s: Stream): int =
   result = -1
   let c = s.readChar
   if c >= chr(0x80) and c <= chr(0x8f): result = ord(c) and 0x0f
@@ -879,7 +884,7 @@ proc unpack_map*[ByteStream](s: ByteStream): int =
   elif c == chr(0xdf):
     result = int(s.unstore32())
 
-proc unpack_type*[ByteStream, T](s: ByteStream, val: var seq[T]) =
+proc unpack_type*[Stream, T](s: Stream, val: var seq[T]) =
   when compiles(isNil(val)):
     if s.peekChar == pack_value_nil:
       val = nil
@@ -897,7 +902,7 @@ proc unpack_type*[ByteStream, T](s: ByteStream, val: var seq[T]) =
     s.unpack(x)
     val[i] = x
 
-proc unpack_type*[ByteStream, T](s: ByteStream, val: var openarray[T]) =
+proc unpack_type*[Stream, T](s: Stream, val: var openarray[T]) =
   let len = s.unpack_array()
   if len < 0: raise conversionError("openarray")
   for i in 0..len-1:
@@ -905,7 +910,7 @@ proc unpack_type*[ByteStream, T](s: ByteStream, val: var openarray[T]) =
     s.unpack(x)
     val[i] = x
 
-proc unpack_type*[ByteStream; T: enum|range](s: ByteStream, val: var T) =
+proc unpack_type*[Stream; T: enum|range](s: Stream, val: var T) =
   when val is range:
     var tmp = s.unpack_imp_int64
     val = T(tmp)
@@ -915,7 +920,7 @@ proc unpack_type*[ByteStream; T: enum|range](s: ByteStream, val: var T) =
 #bug #4 remedy
 #don't know why the above proc cannot capture enum type properly
 #that's why we need a proxy here
-proc unpack_enum_proxy*[ByteStream, T](s: ByteStream, val: T): T =
+proc unpack_enum_proxy*[Stream, T](s: Stream, val: T): T =
   result = T(s.unpack_imp_int64)
 
 macro unpack_proxy(n: typed): untyped =
@@ -926,49 +931,49 @@ macro unpack_proxy(n: typed): untyped =
     result = quote do:
       s.unpack `n`
 
-proc is_string*[ByteStream](s: ByteStream): bool =
+proc is_string*(s: Stream): bool =
   let c = s.peekChar
   if c >= chr(0xa0) and c <= chr(0xbf):
     return true
   result = c in {chr(0xd9), chr(0xda), chr(0xdb)}
 
-proc is_map*[ByteStream](s: ByteStream): bool =
+proc is_map*(s: Stream): bool =
   let c = s.peekChar
   if c >= chr(0x80) and c <= chr(0x8f):
     return true
   result = c in {chr(0xde), chr(0xdf)}
 
-proc is_array*[ByteStream](s: ByteStream): bool =
+proc is_array*(s: Stream): bool =
   let c = s.peekChar
   if c >= chr(0x90) and c <= chr(0x9f):
     return true
   result = c in {chr(0xdc), chr(0xdd)}
 
-proc is_bin*[ByteStream](s: ByteStream): bool =
+proc is_bin*(s: Stream): bool =
   let c = s.peekChar
   result = c in {chr(0xc4), chr(0xc5), chr(0xc6)}
 
-proc is_ext*[ByteStream](s: ByteStream): bool =
+proc is_ext*(s: Stream): bool =
   let c = s.peekChar
   if c >= chr(0xd4) and c <= chr(0xd8):
     return true
   result = c in {chr(0xc7), chr(0xc8), chr(0xc9)}
 
-proc is_bool*[ByteStream](s: ByteStream): bool =
+proc is_bool*(s: Stream): bool =
   let c = s.peekChar
   result = c in {chr(0xc3), chr(0xc2)}
 
-proc is_float*[ByteStream](s: ByteStream): bool =
+proc is_float*(s: Stream): bool =
   let c = s.peekChar
   result = c in {chr(0xca), chr(0xcb)}
 
-proc is_uint*[ByteStream](s: ByteStream): bool =
+proc is_uint*(s: Stream): bool =
   let c = s.peekChar
   if c >= chr(0xcc) and c <= chr(0xcf):
     return true
   result = c < chr(128)
 
-proc is_int*[ByteStream](s: ByteStream): bool =
+proc is_int*(s: Stream): bool =
   let c = s.peekChar
   if c >= chr(0xe0) and c <= chr(0xff):
     return true
@@ -979,7 +984,7 @@ proc is_int*[ByteStream](s: ByteStream): bool =
   if c >= chr(0xcc) and c <= chr(0xcf):
     return true
 
-proc skip_msg*[ByteStream](s: ByteStream) =
+proc skip_msg*(s: Stream) =
   let c = ord(s.peekChar)
   var len = 0
   case c
@@ -1014,7 +1019,7 @@ proc skip_msg*[ByteStream](s: ByteStream) =
   else:
     raise conversionError("unknown command during skip")
 
-proc unpack_type*[ByteStream; T: tuple|object](s: ByteStream, val: var T) =
+proc unpack_type*[Stream; T: tuple|object](s: Stream, val: var T) =
   template dry_and_wet(): untyped =
     when defined(msgpack_obj_to_map):
       let len = s.unpack_map()
@@ -1045,7 +1050,7 @@ proc unpack_type*[ByteStream; T: tuple|object](s: ByteStream, val: var T) =
         inc length
       doAssert(arrayLen == length, "object/tuple len mismatch")
 
-  when ByteStream is MsgStream:
+  when Stream is MsgStream:
     case s.encodingMode
     of MSGPACK_OBJ_TO_ARRAY:
       let arrayLen = s.unpack_array()
@@ -1080,19 +1085,19 @@ proc unpack_type*[ByteStream; T: tuple|object](s: ByteStream, val: var T) =
   else:
     dry_and_wet()
 
-proc unpack_type*[ByteStream; T: ref](s: ByteStream, val: var T) =
+proc unpack_type*[Stream; T: ref](s: Stream, val: var T) =
   if s.peekChar == pack_value_nil:
     s.skip_msg()
     return
   if isNil(val): new(val)
   s.unpack(val[])
 
-proc unpack_type*[ByteStream, T](s: ByteStream, val: var ptr T) =
+proc unpack_type*[Stream, T](s: Stream, val: var ptr T) =
   if s.peekChar == pack_value_nil: return
   if isNil(val): val = cast[ptr T](alloc(sizeof(T)))
   s.unpack(val[])
 
-proc unpack_bin*[ByteStream](s: ByteStream): int =
+proc unpack_bin*(s: Stream): int =
   let c = s.readChar
   if c == chr(0xc4):
     result = ord(s.readChar)
@@ -1103,7 +1108,7 @@ proc unpack_bin*[ByteStream](s: ByteStream): int =
   else:
     raise conversionError("bin")
 
-proc unpack_ext*[ByteStream](s: ByteStream): tuple[exttype: int8, len: int] =
+proc unpack_ext*(s: Stream): tuple[exttype: int8, len: int] =
   let c = s.readChar
   case c
   of chr(0xd4):
@@ -1137,29 +1142,29 @@ proc unpack_ext*[ByteStream](s: ByteStream): tuple[exttype: int8, len: int] =
     else:
       raise conversionError("ext")
 
-proc pack_type*[ByteStream; T: proc](s: ByteStream, val: T) =
+proc pack_type*[Stream; T: proc](s: Stream, val: T) =
   s.pack_imp_nil()
 
-proc unpack_type*[ByteStream; T: proc](s: ByteStream, val: var T) =
+proc unpack_type*[Stream; T: proc](s: Stream, val: var T) =
   discard
   #raise conversionError("can't convert proc type")
 
-proc pack_type*[ByteStream](s: ByteStream, val: cstring) =
+proc pack_type*(s: Stream, val: cstring) =
   s.pack_imp_nil()
 
-proc unpack_type*[ByteStream](s: ByteStream, val: var cstring) =
+proc unpack_type*(s: Stream, val: var cstring) =
   discard
   #raise conversionError("can't convert cstring type")
 
-proc pack_type*[ByteStream](s: ByteStream, val: pointer) =
+proc pack_type*(s: Stream, val: pointer) =
   s.pack_imp_nil()
 
-proc unpack_type*[ByteStream](s: ByteStream, val: var pointer) =
+proc unpack_type*(s: Stream, val: var pointer) =
   discard
   #raise conversionError("can't convert pointer type")
 
-proc pack*[ByteStream, T](s: ByteStream, val: T) = s.pack_type undistinct_pack(val)
-proc unpack*[ByteStream, T](s: ByteStream, val: var T) = s.unpack_type undistinct_unpack(val)
+proc pack*[Stream, T](s: Stream, val: T) = s.pack_type undistinct_pack(val)
+proc unpack*[Stream, T](s: Stream, val: var T) = s.unpack_type undistinct_unpack(val)
 
 proc pack*[T](val: T): string =
   var s = MsgStream.init(sizeof(T))
@@ -1171,13 +1176,13 @@ proc unpack*[T](data: string, val: var T) =
   s.setPosition(0)
   s.unpack(val)
 
-proc unpack*[ByteStream, T](s: ByteStream, val: typedesc[T]): T {.inline.} =
+proc unpack*[Stream, T](s: Stream, val: typedesc[T]): T {.inline.} =
   unpack(s, result)
 
 proc unpack*[T](data: string, val: typedesc[T]): T {.inline.} =
   unpack(data, result)
 
-proc stringify*[ByteStream](s: ByteStream, zz: ByteStream) =
+proc stringify*(s: Stream, zz: Stream) =
   let c = ord(s.peekChar)
   var len = 0
   case c

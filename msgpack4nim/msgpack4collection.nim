@@ -1,7 +1,7 @@
 import sequtils, math, ../msgpack4nim
-import tables, intsets, lists, deques, sets, strtabs, critbits
+import tables, intsets, lists, deques, sets, strtabs, critbits, streams
 
-proc pack_type*[ByteStream](s: ByteStream, val: IntSet) =
+proc pack_type*(s: Stream, val: IntSet) =
   var ss = MsgStream.init()
   var count = 0
   for i in items(val):
@@ -10,75 +10,75 @@ proc pack_type*[ByteStream](s: ByteStream, val: IntSet) =
   s.pack_array(count)
   s.write(ss.data)
 
-proc pack_type*[ByteStream, T](s: ByteStream, val: SinglyLinkedList[T]) =
+proc pack_type*[Stream, T](s: Stream, val: SinglyLinkedList[T]) =
   s.pack_items_imp(val)
 
-proc pack_type*[ByteStream, T](s: ByteStream, val: DoublyLinkedList[T]) =
+proc pack_type*[Stream, T](s: Stream, val: DoublyLinkedList[T]) =
   s.pack_items_imp(val)
 
-proc pack_type*[ByteStream, T](s: ByteStream, val: SinglyLinkedRing[T]) =
+proc pack_type*[Stream, T](s: Stream, val: SinglyLinkedRing[T]) =
   s.pack_items_imp(val)
 
-proc pack_type*[ByteStream, T](s: ByteStream, val: DoublyLinkedRing[T]) =
+proc pack_type*[Stream, T](s: Stream, val: DoublyLinkedRing[T]) =
   s.pack_items_imp(val)
 
-proc pack_type*[ByteStream, T](s: ByteStream, val: Deque[T]) =
+proc pack_type*[Stream, T](s: Stream, val: Deque[T]) =
   s.pack_array(val.len)
   for i in items(val): s.pack_type undistinct_pack(i)
 
-proc pack_type*[ByteStream, T](s: ByteStream, val: HashSet[T]) =
+proc pack_type*[Stream, T](s: Stream, val: HashSet[T]) =
   s.pack_array(val.len)
   for i in items(val): s.pack_type undistinct_pack(i)
 
-proc pack_type*[ByteStream, T](s: ByteStream, val: OrderedSet[T]) =
+proc pack_type*[Stream, T](s: Stream, val: OrderedSet[T]) =
   s.pack_array(val.len)
   for i in items(val): s.pack_type undistinct_pack(i)
 
-proc pack_type*[ByteStream, K,V](s: ByteStream, val: Table[K,V]) =
+proc pack_type*[Stream, K,V](s: Stream, val: Table[K,V]) =
   s.pack_map_imp(val)
 
-proc pack_type*[ByteStream, K,V](s: ByteStream, val: TableRef[K,V]) =
+proc pack_type*[Stream, K,V](s: Stream, val: TableRef[K,V]) =
   if isNil(val): s.pack_imp_nil()
   else:
     s.pack_map_imp(val)
 
-proc pack_type*[ByteStream, K,V](s: ByteStream, val: OrderedTable[K,V]) =
+proc pack_type*[Stream, K,V](s: Stream, val: OrderedTable[K,V]) =
   s.pack_map_imp(val)
 
-proc pack_type*[ByteStream, K,V](s: ByteStream, val: OrderedTableRef[K,V]) =
+proc pack_type*[Stream, K,V](s: Stream, val: OrderedTableRef[K,V]) =
   if isNil(val): s.pack_imp_nil()
   else:
     s.pack_map_imp(val)
 
-proc pack_type*[ByteStream](s: ByteStream, val: StringTableRef) =
+proc pack_type*(s: Stream, val: StringTableRef) =
   if isNil(val): s.pack_imp_nil()
   else:
     s.pack_map_imp(val)
 
-proc pack_type*[ByteStream, T](s: ByteStream, val: CritBitTree[T]) =
+proc pack_type*[Stream, T](s: Stream, val: CritBitTree[T]) =
   when T is void:
     s.pack_array(val.len)
     for i in items(val): s.pack_type(i)
   else:
     s.pack_map_imp(val)
 
-proc unpack_type*[ByteStream, T](s: ByteStream, val: var SinglyLinkedList[T]) =
+proc unpack_type*[Stream, T](s: Stream, val: var SinglyLinkedList[T]) =
   val = initSinglyLinkedList[T]()
   s.unpack_items_imp(val, "singly linked list")
 
-proc unpack_type*[ByteStream, T](s: ByteStream, val: var DoublyLinkedList[T]) =
+proc unpack_type*[Stream, T](s: Stream, val: var DoublyLinkedList[T]) =
   val = initDoublyLinkedList[T]()
   s.unpack_items_imp(val, "doubly linked list")
 
-proc unpack_type*[ByteStream, T](s: ByteStream, val: var SinglyLinkedRing[T]) =
+proc unpack_type*[Stream, T](s: Stream, val: var SinglyLinkedRing[T]) =
   val = initSinglyLinkedRing[T]()
   s.unpack_items_imp(val, "singly linked ring")
 
-proc unpack_type*[ByteStream, T](s: ByteStream, val: var DoublyLinkedRing[T]) =
+proc unpack_type*[Stream, T](s: Stream, val: var DoublyLinkedRing[T]) =
   val = initDoublyLinkedRing[T]()
   s.unpack_items_imp(val, "doubly linked ring")
 
-proc unpack_type*[ByteStream, T](s: ByteStream, val: var Deque[T]) =
+proc unpack_type*[Stream, T](s: Stream, val: var Deque[T]) =
   let len = s.unpack_array()
   if len < 0: raise conversionError("Deque")
 
@@ -88,7 +88,7 @@ proc unpack_type*[ByteStream, T](s: ByteStream, val: var Deque[T]) =
     s.unpack(x)
     val.addLast(x)
 
-proc unpack_type*[ByteStream, T](s: ByteStream, val: var HashSet[T]) =
+proc unpack_type*[Stream, T](s: Stream, val: var HashSet[T]) =
   let len = s.unpack_array()
   if len < 0: raise conversionError("hash set")
 
@@ -98,7 +98,7 @@ proc unpack_type*[ByteStream, T](s: ByteStream, val: var HashSet[T]) =
     s.unpack(x)
     val.incl(x)
 
-proc unpack_type*[ByteStream, T](s: ByteStream, val: var OrderedSet[T]) =
+proc unpack_type*[Stream, T](s: Stream, val: var OrderedSet[T]) =
   let len = s.unpack_array()
   if len < 0: raise conversionError("ordered set")
 
@@ -108,7 +108,7 @@ proc unpack_type*[ByteStream, T](s: ByteStream, val: var OrderedSet[T]) =
     s.unpack(x)
     val.incl(x)
 
-proc unpack_type*[ByteStream, K,V](s: ByteStream, val: var Table[K,V]) =
+proc unpack_type*[Stream, K,V](s: Stream, val: var Table[K,V]) =
   let len = s.unpack_map()
   if len < 0: raise conversionError("table")
 
@@ -120,7 +120,7 @@ proc unpack_type*[ByteStream, K,V](s: ByteStream, val: var Table[K,V]) =
     s.unpack(v)
     val[k] = v
 
-proc unpack_type*[ByteStream, K,V](s: ByteStream, val: var TableRef[K,V]) =
+proc unpack_type*[Stream, K,V](s: Stream, val: var TableRef[K,V]) =
   if s.peekChar == pack_value_nil: return
 
   let len = s.unpack_map()
@@ -134,7 +134,7 @@ proc unpack_type*[ByteStream, K,V](s: ByteStream, val: var TableRef[K,V]) =
     s.unpack(v)
     val[k] = v
 
-proc unpack_type*[ByteStream, K,V](s: ByteStream, val: var OrderedTable[K,V]) =
+proc unpack_type*[Stream, K,V](s: Stream, val: var OrderedTable[K,V]) =
   let len = s.unpack_map()
   if len < 0: raise conversionError("ordered table")
 
@@ -146,7 +146,7 @@ proc unpack_type*[ByteStream, K,V](s: ByteStream, val: var OrderedTable[K,V]) =
     s.unpack(v)
     val[k] = v
 
-proc unpack_type*[ByteStream, K,V](s: ByteStream, val: var OrderedTableRef[K,V]) =
+proc unpack_type*[Stream, K,V](s: Stream, val: var OrderedTableRef[K,V]) =
   if s.peekChar == pack_value_nil: return
 
   let len = s.unpack_map()
@@ -160,7 +160,7 @@ proc unpack_type*[ByteStream, K,V](s: ByteStream, val: var OrderedTableRef[K,V])
     s.unpack(v)
     val[k] = v
 
-proc unpack_type*[ByteStream](s: ByteStream, val: var StringTableRef) =
+proc unpack_type*(s: Stream, val: var StringTableRef) =
   if s.peekChar == pack_value_nil: return
 
   let len = s.unpack_map()
@@ -173,7 +173,7 @@ proc unpack_type*[ByteStream](s: ByteStream, val: var StringTableRef) =
     s.unpack_type(v)
     val[k] = v
 
-proc unpack_type*[ByteStream, T](s: ByteStream, val: var CritBitTree[T]) =
+proc unpack_type*[Stream, T](s: Stream, val: var CritBitTree[T]) =
   when T is void:
     let len = s.unpack_array()
     if len < 0: raise conversionError("critbit tree")
@@ -192,7 +192,7 @@ proc unpack_type*[ByteStream, T](s: ByteStream, val: var CritBitTree[T]) =
       s.unpack(v)
       val[k] = v
 
-proc unpack_type*[ByteStream](s: ByteStream, val: var IntSet) =
+proc unpack_type*(s: Stream, val: var IntSet) =
   val = initIntSet()
   let len = s.unpack_array()
   if len < 0: raise conversionError("int set")

@@ -274,7 +274,7 @@ proc copy*(n: MsgAny): MsgAny =
     for k, v in n:
       result[k.copy] = v.copy
 
-proc toAny*[ByteStream](s: ByteStream): MsgAny =
+proc toAny*(s: Stream): MsgAny =
   let c = ord(s.peekChar)
   case c
   of 0x00..0x7f:
@@ -344,7 +344,7 @@ proc toAny*(data: string): MsgAny =
   var s = MsgStream.init(data)
   result = s.toAny()
 
-proc fromAny*[ByteStream](s: ByteStream, n: MsgAny) =
+proc fromAny*(s: Stream, n: MsgAny) =
   case n.kind
   of msgNull:
     s.write(pack_value_nil)

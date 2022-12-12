@@ -72,14 +72,12 @@ type
     b: someSimpleType
 
 # help the compiler to decide
-# ByteStream is any Stream Compatible object such as MsgStream, FileStream, StringStream
-proc pack_type*[ByteStream](s: ByteStream, x: mycomplexobject) =
+proc pack_type*(s: Stream, x: mycomplexobject) =
   s.pack(x.a) # let the compiler decide
   s.pack(x.b) # let the compiler decide
 
 # help the compiler to decide
-# ByteStream is any Stream Compatible object
-proc unpack_type*[ByteStream](s: ByteStream, x: var mycomplexobject) =
+proc unpack_type*(s: Stream, x: var mycomplexobject) =
   s.unpack(x.a)
   s.unpack(x.b)
 
@@ -138,11 +136,11 @@ import msgpack4nim, strutils
 type
   Guid = distinct string
 
-proc pack_type*[ByteStream](s: ByteStream, v: Guid) =
+proc pack_type*(s: Stream, v: Guid) =
   s.pack_bin(len(v.string))
   s.write(v.string)
 
-proc unpack_type*[ByteStream](s: ByteStream, v: var Guid) =
+proc unpack_type*(s: Stream, v: var Guid) =
   let L = s.unpack_bin()
   v = Guid(s.readStr(L))
 
@@ -311,12 +309,12 @@ another gotcha:
 ## bin and ext format
 
 this implementation provide function to encode/decode msgpack bin/ext format header,
-but for the body, you must write it yourself or read it yourself to/from the MsgStream
+but for the body, you must write it yourself or read it yourself to/from the Stream
 
-* proc pack_bin*[ByteStream](s: ByteStream, len: int)
-* proc pack_ext*[ByteStream](s: ByteStream, len: int, exttype: int8)
-* proc unpack_bin*[ByteStream](s: ByteStream): int
-* proc unpack_ext*[ByteStream](s: ByteStream): tuple[exttype:uint8, len: int]
+* proc pack_bin*(s: Stream, len: int)
+* proc pack_ext*(s: Stream, len: int, exttype: int8)
+* proc unpack_bin*(s: Stream): int
+* proc unpack_ext*(s: Stream): tuple[exttype:uint8, len: int]
 
 ```Nim
 import streams, msgpack4nim
