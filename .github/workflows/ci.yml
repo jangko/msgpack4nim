@@ -134,8 +134,8 @@ jobs:
           }
           nimHash=$(getHash nim-lang/Nim devel)
           csourcesHash=$(getHash nim-lang/csources_v2)
-          echo "::set-output name=nim::$nimHash"
-          echo "::set-output name=csources::$csourcesHash"
+          echo "nim=$nimHash" >> $GITHUB_OUTPUT
+          echo "csources=$csourcesHash" >> $GITHUB_OUTPUT
 
       - name: Restore prebuilt Nim from cache
         id: nim-cache
