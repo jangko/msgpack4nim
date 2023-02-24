@@ -13,7 +13,7 @@ proc toJsonNode*[ByteStream](s: ByteStream): JsonNode =
     for i in 0..<len:
       let key = toJsonNode(s)
       if key.kind != JString: raise conversionError("json key needs a string")
-      result.fields.add(key.getStr(), toJsonNode(s))
+      result.fields[key.getStr()] = toJsonNode(s)
   of 0x90..0x9f, 0xdc..0xdd:
     let len = s.unpack_array()
     result = JsonNode(kind: JArray)

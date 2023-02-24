@@ -29,7 +29,7 @@ type
 proc newMsgAny*(kind: AnyType): MsgAny =
   result = MsgAny(kind: kind)
 
-proc hash*(n: OrderedTable[MsgAny, MsgAny]): Hash {.noSideEffect.}
+proc hash*(n: OrderedTable[MsgAny, MsgAny]): Hash
 
 proc hash*(n: MsgAny): Hash =
   case n.kind
@@ -66,7 +66,7 @@ proc hash*(n: OrderedTable[MsgAny, MsgAny]): Hash =
     result = result xor (hash(key) !& hash(val))
   result = !$result
 
-proc `==`* (a, b: MsgAny): bool =
+proc `==`* (a, b: MsgAny): bool {.noSideEffect.} =
   if a.isNil:
     if b.isNil: return true
     return false
@@ -97,11 +97,12 @@ proc `==`* (a, b: MsgAny): bool =
     of msgMap:
      # we cannot use OrderedTable's equality here as
      # the order does not matter for equality here.
-     if a.mapVal.len != b.mapVal.len: return false
-     for key, val in a.mapVal:
-       if not b.mapVal.hasKey(key): return false
-       if b.mapVal[key] != val: return false
-     result = true
+     {.noSideEffect.}:
+      if a.mapVal.len != b.mapVal.len: return false
+      for key, val in a.mapVal:
+        if not b.mapVal.hasKey(key): return false
+        if b.mapVal[key] != val: return false
+      result = true
 
 proc anyMap*(len: int = 4): MsgAny =
   result = newMsgAny(msgMap)
