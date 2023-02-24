@@ -945,3 +945,47 @@ suite "msgpack encoder-decoder":
     for e in unpackedList:
       res.add $e.value
     check res == "235"
+
+  test "bug #72, unpack a seq of ref object":
+    type
+      Node = ref object
+        nName: string
+        nodes: seq[Node]
+
+    let main = Node(nName: "main")
+    main.nodes.add(Node(nName: "one"))
+    main.nodes.add(Node(nName: "two"))
+    main.nodes.add(Node(nName: "three"))
+    main.nodes.add(Node(nName: "four"))
+
+    var refNode: Node
+    var s = MsgStream.init()
+    s.pack(main)
+    unpack(s.data, refNode)
+
+    check refNode.nName == "main"
+    var names: seq[string]
+    for sub in refNode.nodes:
+      check sub.nName notin names
+      names.add(sub.nName) # one, thwo, three, four
+
+  test "unpack array of ref object":
+    type
+      Node = ref object
+        name: string
+
+    var list: array[4, Node]
+    list[0] = Node(name: "one")
+    list[1] = Node(name: "two")
+    list[2] = Node(name: "three")
+    list[3] = Node(name: "four")
+
+    var nodes: array[4, Node]
+    var s = MsgStream.init()
+    s.pack(list)
+    unpack(s.data, nodes)
+
+    var names: seq[string]
+    for sub in nodes:
+      check sub.name notin names
+      names.add(sub.name)

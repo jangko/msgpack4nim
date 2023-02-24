@@ -926,17 +926,17 @@ proc unpack_type*[ByteStream, T](s: ByteStream, val: var seq[T]) =
 
   let len = s.unpack_array()
   if len < 0: raise conversionError("sequence")
-  var x:T
   val = newSeq[T](len)
   for i in 0..len-1:
+    var x:T
     s.unpack(x)
     val[i] = x
 
 proc unpack_type*[ByteStream, T](s: ByteStream, val: var openarray[T]) =
   let len = s.unpack_array()
   if len < 0: raise conversionError("openarray")
-  var x:T
   for i in 0..len-1:
+    var x:T
     s.unpack(x)
     val[i] = x
 
