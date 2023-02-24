@@ -1,5 +1,5 @@
 # Package
-version       = "0.3.1"
+version       = "0.4.0"
 author        = "Andri Lim"
 description   = "MessagePack serializer/deserializer implementation in nim"
 license       = "MIT"
@@ -7,7 +7,7 @@ license       = "MIT"
 # Dependencies
 requires "nim >= 0.18.0"
 
-installFiles = @["msgpack4nim.nim", "msgpack4collection.nim", "msgpack2any.nim", "msgpack2json.nim"]
+installFiles = @["msgpack4nim.nim"]
 
 # Examples and Tests
 skipDirs = @["examples", "tests"]
