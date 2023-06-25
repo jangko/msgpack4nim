@@ -1,4 +1,6 @@
-import ../msgpack4nim, streams
+import std/streams
+
+import msgpack4nim
 
 type
   #lets try with a many members with different types object

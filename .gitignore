@@ -1,3 +1,6 @@
+# Test and examples binaries
+build/
+
 # Windows image file caches
 Thumbs.db
 ehthumbs.db

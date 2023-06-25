@@ -1,6 +1,8 @@
-import streams, endians, strutils, sequtils, algorithm, math, hashes
-import tables, intsets, lists, deques, sets, strtabs, critbits
-import ../msgpack4nim, unittest, ../msgpack4nim/msgpack4collection
+import std/[algorithm, critbits, deques, endians, hashes, intsets, lists,
+            math, sequtils, sets, streams, strtabs, strutils, tables, unittest]
+
+import msgpack4nim
+import msgpack4nim/msgpack4collection
 
 type
   Choco = object

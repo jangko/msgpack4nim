@@ -1,4 +1,6 @@
-import streams, ../msgpack4nim, unittest
+import std/[streams,unittest]
+
+import msgpack4nim
 
 type
   TA = object of RootObj
