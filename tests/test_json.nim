@@ -73,10 +73,10 @@ suite "json-msgpack conversion":
     check cmp(newJString("OK"), "a24f4b")
 
   test "basic":
-    let appDir = getAppDir()
-    let n = json.parseFile(appDir & DirSep & "basic.json")
+    const jsonStr = staticRead("basic.json")
+    const mp = staticRead("basic.mp")
+    let n = json.parseJson(jsonStr)
     let msg = fromJsonNode(n)
-    let mp = readFile(appDir & DirSep & "basic.mp")
     check mp == msg
 
     var jn = toJsonNode(msg)

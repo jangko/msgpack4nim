@@ -39,16 +39,14 @@ proc test(env, path: string) =
 task test, "Run all tests":
   test "-d:debug", "examples/test"
   test "-d:msgpack_obj_to_map", "tests/test_any"
-  # because uses `getAppDir()`, see https://github.com/nim-lang/Nim/pull/13382
-  test "-d:debug --outdir:tests", "tests/test_json"
+  test "-d:debug", "tests/test_json"
   test "-d:debug", "tests/test_codec"
   test "-d:debug", "tests/test_spec"
   test "-d:debug", "tests/test_suite"
 
   test "-d:release", "examples/test"
   test "-d:release -d:msgpack_obj_to_map", "tests/test_any"
-  # ditto
-  test "-d:release --outdir:tests", "tests/test_json"
+  test "-d:release", "tests/test_json"
 
   test "-d:release", "tests/test_codec"
   test "-d:release", "tests/test_spec"
