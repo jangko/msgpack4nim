@@ -90,7 +90,7 @@ proc unpack_bin*(s: Stream): int
 proc unpack_ext*(s: Stream): tuple[exttype: int8, len: int]
 
 
-proc conversionError*(msg: string): ref ObjectConversionError =
+proc conversionError*(msg: string): ref ObjectConversionDefect =
   new(result)
   result.msg = msg
 
