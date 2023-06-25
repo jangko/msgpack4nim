@@ -1,4 +1,7 @@
-import unittest, ../msgpack4nim, strutils, os, json, ../msgpack4nim/msgpack2any
+import std/[json, os, strutils, unittest]
+
+import msgpack4nim
+import msgpack4nim/msgpack2any
 
 const
   msgpack = "msgpack"

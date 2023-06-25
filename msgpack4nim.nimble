@@ -7,7 +7,7 @@ license       = "MIT"
 # Dependencies
 requires "nim >= 0.18.0"
 
-installFiles = @["msgpack4nim.nim"]
+srcDir        = "src"
 
 # Examples and Tests
 skipDirs = @["examples", "tests"]

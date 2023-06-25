@@ -1,7 +1,7 @@
-import
-  streams, tables, sets, strtabs,
-  ../msgpack4nim/msgpack4collection,
-  ../msgpack4nim, unittest
+import std/[streams, tables, sets, strtabs, unittest]
+
+import msgpack4nim
+import msgpack4nim/msgpack4collection
 
 type
   Horse = object
