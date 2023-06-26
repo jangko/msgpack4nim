@@ -10,11 +10,9 @@ I found out nim compiler is smart enough to make serialization/deserialization t
 
 **requirement:** nim ver 0.18.1 or later
 
-[![Build Status (Travis)](https://img.shields.io/travis/jangko/msgpack4nim/master.svg?label=Linux%20/%20macOS "Linux/macOS build status (Travis)")](https://travis-ci.org/jangko/msgpack4nim)
-[![Windows build status (Appveyor)](https://img.shields.io/appveyor/ci/jangko/msgpack4nim/master.svg?label=Windows "Windows build status (Appveyor)")](https://ci.appveyor.com/project/jangko/msgpack4nim)
 ![nimble](https://img.shields.io/badge/available%20on-nimble-yellow.svg?style=flat-square)
 ![license](https://img.shields.io/github/license/citycide/cascade.svg?style=flat-square)
-![Github action](https://github.com/jangko/msgpack4nim/workflows/msgpack4nim%20CI/badge.svg)
+![Github action](https://github.com/jangko/msgpack4nim/workflows/CI/badge.svg)
 
 ## Example
 
