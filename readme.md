@@ -8,7 +8,7 @@ But I want something easier to use. Another motivation come from the nim languag
 The current version of nim compiler offer many improvements, including 'generics ' specialization.
 I found out nim compiler is smart enough to make serialization/deserialization to/from msgpack easy and convenient.
 
-**requirement:** nim ver 0.18.1 or later
+**requirement:** nim ver 1.16.0 or later
 
 ![nimble](https://img.shields.io/badge/available%20on-nimble-yellow.svg?style=flat-square)
 ![license](https://img.shields.io/github/license/citycide/cascade.svg?style=flat-square)
