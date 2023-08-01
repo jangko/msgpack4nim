@@ -26,6 +26,8 @@ type
     of msgUint: uintVal*: uint64
     of msgNull: nil
 
+{.push gcsafe.}
+
 proc newMsgAny*(kind: AnyType): MsgAny =
   result = MsgAny(kind: kind)
 
@@ -473,3 +475,5 @@ proc toPretty(result: var string, n: MsgAny, indent = 2, ml = true,
 proc pretty*(n: MsgAny, indent = 2): string =
   result = ""
   toPretty(result, n, indent)
+
+{.pop.}

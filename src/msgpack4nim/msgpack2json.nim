@@ -1,5 +1,7 @@
 import ../msgpack4nim, json, tables, math, base64, streams
 
+{.push gcsafe.}
+
 proc toJsonNode*(s: Stream): JsonNode =
   let c = ord(s.peekChar)
   case c
@@ -94,3 +96,5 @@ proc fromJsonNode*(n: JsonNode): string =
   var s = MsgStream.init()
   fromJsonNode(s, n)
   result = s.data
+
+{.pop.}

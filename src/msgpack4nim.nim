@@ -40,6 +40,8 @@ type
   MsgStream* = ref object of StringStreamObj
     encodingMode: EncodingMode
 
+{.push gcsafe.}
+
 proc init*(x: typedesc[MsgStream], data: sink string, encodingMode = MSGPACK_OBJ_TO_DEFAULT): MsgStream =
   result = new x
   # Initialize StringStream base by copying fields from a new StringStream:
@@ -1284,3 +1286,5 @@ proc stringify*(data: string): string =
     stringify(s, zz)
     zz.write(" ")
   result = zz.data
+
+{.pop.}

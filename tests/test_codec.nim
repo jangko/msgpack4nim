@@ -1,4 +1,4 @@
-import std/[algorithm, critbits, deques, endians, hashes, intsets, lists,
+import std/[algorithm, critbits, deques, hashes, intsets, lists,
             math, sequtils, sets, streams, strtabs, strutils, tables, unittest]
 
 import msgpack4nim
@@ -991,3 +991,15 @@ suite "msgpack encoder-decoder":
     for sub in nodes:
       check sub.name notin names
       names.add(sub.name)
+
+  test "unpack in gcsafe proc":
+    proc gcsafeProc(): carrier {.gcsafe.} =
+      let cc = initCarrier()
+      let buf = pack(cc)
+      var dd: carrier
+      unpack(buf, dd)
+      result = dd
+
+    let cc = initCarrier()
+    let dd = gcsafeProc()
+    check $cc == $dd

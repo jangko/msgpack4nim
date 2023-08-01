@@ -1,6 +1,8 @@
 import sequtils, math, ../msgpack4nim
 import tables, intsets, lists, deques, sets, strtabs, critbits, streams
 
+{.push gcsafe.}
+
 proc pack_type*(s: Stream, val: IntSet) =
   var ss = MsgStream.init()
   var count = 0
@@ -201,3 +203,5 @@ proc unpack_type*(s: Stream, val: var IntSet) =
   for i in 0..len-1:
     x = s.unpack_imp_int32()
     val.incl(x)
+
+{.pop.}
