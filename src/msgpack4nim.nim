@@ -26,7 +26,7 @@ when not declared SomeFloat:
   type
     SomeFloat = SomeReal
 
-import endians, macros, strutils, streams
+import endians, macros, strutils, streams, typetraits
 
 const pack_value_nil* = chr(0xc0)
 
@@ -100,52 +100,19 @@ template skipUndistinct* {.pragma, deprecated.}
   # no need to use this pragma anymore
   # the undistinct macro is more clever now
 
-proc getParamIdent(n: NimNode): NimNode =
-  n.expectKind({nnkIdent, nnkVarTy, nnkSym})
-  if n.kind in {nnkIdent, nnkSym}:
-    result = n
+template undistinct_pack*(s, f, x) =
+  mixin pack_type
+  when compiles(f(s, x)):
+    f(s, x)
   else:
-    result = n[0]
+    f(s, distinctBase(x))
 
-proc hasDistinctImpl(w: NimNode, z: NimNode): bool =
-  for k in w:
-    let p = k.getImpl()[3][2][1]
-    if p.kind in {nnkIdent, nnkVarTy, nnkSym}:
-      let paramIdent = getParamIdent(p)
-      if eqIdent(paramIdent, z): return true
-
-proc needToSkip(typ: NimNode | typedesc, w: NimNode): bool {.compileTime.} =
-  let z = getType(typ)[1]
-
-  if z.kind == nnkSym:
-    if hasDistinctImpl(w, z): return true
-
-  if z.kind != nnkSym: return false
-  let impl = getImpl(z)
-  if impl.kind != nnkTypeDef: return false
-  if impl[2].kind != nnkDistinctTy: return false
-  if impl[0].kind != nnkPragmaExpr: return false
-  let prag = impl[0][1][0]
-  result = eqIdent("skipUndistinct", prag)
-
-#this macro convert any distinct types to it's base type
-macro undistinctImpl*(x: typed, typ: typedesc, w: typed): untyped =
-  var ty = getType(x)
-  if needToSkip(typ, w):
-    result = x
-    return
-  var isDistinct = ty.typekind == ntyDistinct
-  if isDistinct:
-    let parent = ty[1]
-    result = quote do: `parent`(`x`)
+template undistinct_unpack*(s, f, x) =
+  mixin unpack_type
+  when compiles(f(s, x)):
+    f(s, x)
   else:
-    result = x
-
-template undistinct_pack*(x: typed): untyped =
-  undistinctImpl(x, type(x), bindSym("pack_type", brForceOpen))
-
-template undistinct_unpack*(x: typed): untyped =
-  undistinctImpl(x, type(x), bindSym("unpack_type", brForceOpen))
+    f(s, distinctBase(x))
 
 when system.cpuEndian == littleEndian:
   proc take8_8(val: uint8): uint8 {.inline.} = val
@@ -663,30 +630,33 @@ proc pack_items_imp*[Stream, T](s: Stream, val: T) {.inline.} =
   var ss = MsgStream.init(sizeof(T))
   var count = 0
   for i in items(val):
-    ss.pack undistinct_pack(i)
+    undistinct_pack(ss, pack, i)
     inc(count)
   s.pack_array(count)
   s.write(ss.data)
 
 proc pack_map_imp*[Stream, T](s: Stream, val: T) {.inline.} =
+  mixin pack_type
   s.pack_map(val.len)
   for k,v in pairs(val):
-    s.pack_type undistinct_pack(k)
-    s.pack_type undistinct_pack(v)
+    undistinct_pack(s, pack_type, k)
+    undistinct_pack(s, pack_type, v)
 
 proc pack_type*[Stream, T](s: Stream, val: openArray[T]) =
+  mixin pack_type
   s.pack_array(val.len)
-  for i in 0..val.len-1: s.pack_type undistinct_pack(val[i])
+  for i in 0..val.len-1: undistinct_pack(s, pack_type, val[i])
 
 proc pack_type*[Stream, T](s: Stream, val: seq[T]) =
+  mixin pack_type
   when compiles(isNil(val)):
     if isNil(val): s.pack_imp_nil()
     else:
       s.pack_array(val.len)
-      for i in 0..val.len-1: s.pack_type undistinct_pack(val[i])
+      for i in 0..val.len-1: undistinct_pack(s, pack_type, val[i])
   else:
     s.pack_array(val.len)
-    for i in 0..val.len-1: s.pack_type undistinct_pack(val[i])
+    for i in 0..val.len-1: undistinct_pack(s, pack_type, val[i])
 
 proc pack_type*[Stream; T: enum|range](s: Stream, val: T) =
   when val is range:
@@ -695,6 +665,7 @@ proc pack_type*[Stream; T: enum|range](s: Stream, val: T) =
     pack_int_imp_select(s, val)
 
 proc pack_type*[Stream; T: tuple|object](s: Stream, val: T) =
+  mixin pack_type
   var len = 0
   for field in fields(val):
     inc(len)
@@ -704,39 +675,41 @@ proc pack_type*[Stream; T: tuple|object](s: Stream, val: T) =
       s.pack_map(len)
       for field, value in fieldPairs(val):
         s.pack_type field
-        s.pack_type undistinct_pack(value)
+        undistinct_pack(s, pack_type, value)
     elif defined(msgpack_obj_to_stream):
       for field in fields(val):
-        s.pack_type undistinct_pack(field)
+        undistinct_pack(s, pack_type, field)
     else:
       s.pack_array(len)
       for field in fields(val):
-        s.pack_type undistinct_pack(field)
+        undistinct_pack(s, pack_type, field)
 
   when Stream is MsgStream:
     case s.encodingMode
     of MSGPACK_OBJ_TO_ARRAY:
       s.pack_array(len)
       for field in fields(val):
-        s.pack_type undistinct_pack(field)
+        undistinct_pack(s, pack_type, field)
     of MSGPACK_OBJ_TO_MAP:
       s.pack_map(len)
       for field, value in fieldPairs(val):
         s.pack_type field
-        s.pack_type undistinct_pack(value)
+        undistinct_pack(s, pack_type, value)
     of MSGPACK_OBJ_TO_STREAM:
       for field in fields(val):
-        s.pack_type undistinct_pack(field)
+        undistinct_pack(s, pack_type, field)
     else:
       dry_and_wet()
   else:
     dry_and_wet()
 
 proc pack_type*[Stream; T: ref](s: Stream, val: T) =
+  mixin pack_type
   if isNil(val): s.pack_imp_nil()
   else: s.pack_type(val[])
 
 proc pack_type*[Stream, T](s: Stream, val: ptr T) =
+  mixin pack_type
   if isNil(val): s.pack_imp_nil()
   else: s.pack_type(val[])
 
@@ -1165,8 +1138,13 @@ proc unpack_type*(s: Stream, val: var pointer) =
   discard
   #raise conversionError("can't convert pointer type")
 
-proc pack*[Stream, T](s: Stream, val: T) = s.pack_type undistinct_pack(val)
-proc unpack*[Stream, T](s: Stream, val: var T) = s.unpack_type undistinct_unpack(val)
+proc pack*[Stream, T](s: Stream, val: T) =
+  mixin pack_type
+  undistinct_pack(s, pack_type, val)
+
+proc unpack*[Stream, T](s: Stream, val: var T) =
+  mixin unpack_type
+  undistinct_unpack(s, unpack_type, val)
 
 proc pack*[T](val: T): string =
   var s = MsgStream.init(sizeof(T))

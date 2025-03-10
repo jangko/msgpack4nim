@@ -29,5 +29,7 @@ unpack(buf, tom) #magically, it will unpack into a Cat
 
 test "gochas":
   check tom.legs == 4
-  check $tom.kittens == "{\"colt\", \"jilly\"}"
+  check "jilly" in tom.kittens
+  check "colt" in tom.kittens
+  check tom.kittens.len == 2
   check $tom.traits == "{color: black, speed: 120mph}"

@@ -1,7 +1,7 @@
 import std/[streams, strtabs, strutils, unittest]
 
 import msgpack4nim
-import msgpack4nim/[msgpack4collection, msgpack2any]
+import msgpack4nim/[msgpack2any]
 
 suite "dynamic json-like conversion":
 

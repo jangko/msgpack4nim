@@ -92,11 +92,11 @@ type
 
   PRESTO = seq[string]
 
-proc pack_type(s: Stream, v: Guid) =
+proc pack_type*(s: Stream, v: Guid) =
   s.pack_bin(len(v.string))
   s.write(v.string)
 
-proc unpack_type(s: Stream, v: var Guid) =
+proc unpack_type*(s: Stream, v: var Guid) =
   let L = s.unpack_bin()
   v = Guid(s.readExactStr(L))
 
