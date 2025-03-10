@@ -1,6 +1,5 @@
 import sequtils, math, ../msgpack4nim
 import tables, intsets, lists, deques, sets, strtabs, critbits, streams
-import typetraits
 
 {.push gcsafe.}
 
@@ -27,15 +26,15 @@ proc pack_type*[Stream, T](s: Stream, val: DoublyLinkedRing[T]) =
 
 proc pack_type*[Stream, T](s: Stream, val: Deque[T]) =
   s.pack_array(val.len)
-  for i in items(val): s.pack_type distinctBase(i)
+  for i in items(val): undistinct_pack(s, pack_type, i)
 
 proc pack_type*[Stream, T](s: Stream, val: HashSet[T]) =
   s.pack_array(val.len)
-  for i in items(val): s.pack_type distinctBase(i)
+  for i in items(val): undistinct_pack(s, pack_type, i)
 
 proc pack_type*[Stream, T](s: Stream, val: OrderedSet[T]) =
   s.pack_array(val.len)
-  for i in items(val): s.pack_type distinctBase(i)
+  for i in items(val): undistinct_pack(s, pack_type, i)
 
 proc pack_type*[Stream, K,V](s: Stream, val: Table[K,V]) =
   s.pack_map_imp(val)
