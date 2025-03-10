@@ -1,4 +1,4 @@
-import std/[json, os, streams, strutils, unittest]
+import std/[json, streams, strutils, unittest]
 
 import msgpack4nim
 import msgpack4nim/msgpack2json
