@@ -213,8 +213,9 @@ suite "dynamic json-like conversion":
       check x.stringVal == i
 
   test "float number":
-    let xx = [-1.0'f32, -2.0, 0.0, Inf, NegInf, 1.0, 2.0]
-    let vv = [-1.0'f64, -2.0, 0.0, Inf, NegInf, 1.0, 2.0]
+    # clang refuses to compile narrowing INF without static_cast when cpp enabled
+    let xx = [-1.0'f32, -2.0, 0.0, cast[float32](Inf), cast[float32](NegInf), 1.0, 2.0]
+    let vv = [-1.0'f64, -2.0, 0.0, cast[float64](Inf), cast[float64](NegInf), 1.0, 2.0]
 
     var s = MsgStream.init()
     for i in xx: s.pack(i)

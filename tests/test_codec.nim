@@ -273,7 +273,8 @@ suite "msgpack encoder-decoder":
         ss.unpack(oo)
 
   test "float number":
-    var xx = [-1.0'f32, -2.0, 0.0, Inf, NegInf, 1.0, 2.0]
+    # clang refuses to compile narrowing INF without static_cast when cpp enabled
+    let xx = [-1.0'f32, -2.0, 0.0, cast[float32](Inf), cast[float32](NegInf), 1.0, 2.0]
 
     block one:
       var s = MsgStream.init()
@@ -285,7 +286,8 @@ suite "msgpack encoder-decoder":
         s.unpack(x)
         check x == i
 
-    var vv = [-1.0'f64, -2.0, 0.0, Inf, NegInf, 1.0, 2.0]
+    # clang refuses to compile narrowing INF without static_cast when cpp enabled
+    let vv = [-1.0'f64, -2.0, 0.0, cast[float64](Inf), cast[float64](NegInf), 1.0, 2.0]
 
     block two:
       var s = MsgStream.init()

@@ -13,8 +13,10 @@ jobs:
             cpu: amd64
           - os: linux
             cpu: i386
+          - os: linux
+            cpu: arm64
           - os: macos
-            cpu: amd64
+            cpu: arm64
           - os: windows
             cpu: amd64
           - os: windows
@@ -22,31 +24,25 @@ jobs:
         include:
           - target:
               os: linux
+              cpu: arm64
+            builder: ubuntu-22.04-arm
+          - target:
+              os: linux
             builder: ubuntu-22.04
           - target:
               os: macos
-            builder: macos-13
+            builder: macos-15
           - target:
               os: windows
             builder: windows-latest
-
     name: '${{ matrix.target.os }}-${{ matrix.target.cpu }}-${{ matrix.test_lang }}'
     runs-on: ${{ matrix.builder }}
     steps:
       - name: Checkout msgpack4nim
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           path: msgpack4nim
           submodules: false
-
-      - name: Install build dependencies (MacOS)
-        if: runner.os == 'macos'
-        run: |
-          brew update
-          brew install openssl@1.1
-          ln -s /usr/local/opt/openssl/lib/libcrypto.1.1.dylib /usr/local/lib/
-          ln -s /usr/local/opt/openssl/lib/libssl.1.1.dylib /usr/local/lib/
-          echo '/usr/local/opt/openssl@3/bin' >> $GITHUB_PATH
 
       - name: Install build dependencies (Linux i386)
         if: runner.os == 'Linux' && matrix.target.cpu == 'i386'
@@ -71,15 +67,15 @@ jobs:
       - name: Restore MinGW-W64 (Windows) from cache
         if: runner.os == 'Windows'
         id: windows-mingw-cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: external/mingw-${{ matrix.target.cpu }}
-          key: 'mingw-${{ matrix.target.cpu }}'
+          key: 'llvm-mingw-${{ matrix.target.cpu }}'
 
       - name: Restore Nim DLLs dependencies (Windows) from cache
         if: runner.os == 'Windows'
         id: windows-dlls-cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: external/dlls-${{ matrix.target.cpu }}
           key: 'dlls-${{ matrix.target.cpu }}'
@@ -91,17 +87,18 @@ jobs:
         shell: bash
         run: |
           mkdir -p external
-          MINGW_BASE="https://github.com/brechtsanders/winlibs_mingw/releases/download/11.2.0-12.0.1-9.0.0-r1"
+          LLVM_VERSION="20250730"
+          MINGW_BASE="https://github.com/mstorsjo/llvm-mingw/releases/download/$LLVM_VERSION"
           if [[ '${{ matrix.target.cpu }}' == 'amd64' ]]; then
-            MINGW_URL="$MINGW_BASE/winlibs-x86_64-posix-seh-gcc-11.2.0-mingw-w64-9.0.0-r1.7z"
+            MINGW_URL="$MINGW_BASE/llvm-mingw-$LLVM_VERSION-ucrt-x86_64.zip"
             ARCH=64
           else
-            MINGW_URL="$MINGW_BASE/winlibs-i686-posix-dwarf-gcc-11.2.0-mingw-w64-9.0.0-r1.7z"
+            MINGW_URL="$MINGW_BASE/llvm-mingw-$LLVM_VERSION-ucrt-i686.zip"
             ARCH=32
           fi
-          curl -L "$MINGW_URL" -o "external/mingw-${{ matrix.target.cpu }}.7z"
-          7z x -y "external/mingw-${{ matrix.target.cpu }}.7z" -oexternal/
-          mv external/mingw$ARCH external/mingw-${{ matrix.target.cpu }}
+          curl -L "$MINGW_URL" -o "external/mingw-${{ matrix.target.cpu }}.zip"
+          7z x -y "external/mingw-${{ matrix.target.cpu }}.zip" -oexternal/mingw-${{ matrix.target.cpu }}/
+          mv external/mingw-${{ matrix.target.cpu }}/**/* ./external/mingw-${{ matrix.target.cpu }}
 
       - name: Install DLLs dependencies (Windows)
         if: >
@@ -133,13 +130,13 @@ jobs:
             git ls-remote "https://github.com/$1" "${2:-HEAD}" | cut -f 1
           }
           nimHash=$(getHash nim-lang/Nim devel)
-          csourcesHash=$(getHash nim-lang/csources_v2)
+          csourcesHash=$(getHash nim-lang/csources_v3)
           echo "nim=$nimHash" >> $GITHUB_OUTPUT
           echo "csources=$csourcesHash" >> $GITHUB_OUTPUT
 
       - name: Restore prebuilt Nim from cache
         id: nim-cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: nim
           key: 'nim-${{ matrix.target.os }}-${{ matrix.target.cpu }}-${{ steps.versions.outputs.nim }}'
@@ -147,7 +144,7 @@ jobs:
       - name: Restore prebuilt csources from cache
         if: steps.nim-cache.outputs.cache-hit != 'true'
         id: csources-cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: csources/bin
           key: 'csources-${{ matrix.target.os }}-${{ matrix.target.cpu }}-${{ steps.versions.outputs.csources }}'
@@ -156,15 +153,15 @@ jobs:
         if: >
           steps.csources-cache.outputs.cache-hit != 'true' &&
           steps.nim-cache.outputs.cache-hit != 'true'
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
-          repository: nim-lang/csources_v2
+          repository: nim-lang/csources_v3
           path: csources
           ref: ${{ steps.versions.outputs.csources }}
 
       - name: Checkout Nim
         if: steps.nim-cache.outputs.cache-hit != 'true'
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: nim-lang/Nim
           path: nim
@@ -188,6 +185,7 @@ jobs:
             ext=.exe
             ;;
           esac
+          gcc --version
           [[ -z "$ncpu" || $ncpu -le 0 ]] && ncpu=1
           if [[ ! -e csources/bin/nim$ext ]]; then
             make -C csources -j $ncpu CC=gcc ucpu='${{ matrix.target.cpu }}'
