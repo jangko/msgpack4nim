@@ -115,12 +115,16 @@ proc anyArray*(len: int = 0): MsgAny =
   result.arrayVal = newSeqOfCap[MsgAny](len)
 
 proc anyArray*(args: openArray[MsgAny]): MsgAny =
-  result = anyArray(args.len)
-  for c in args: result.arrayVal.add c
+  result = newMsgAny(msgArray)
+  result.arrayVal = newSeq[MsgAny](args.len)
+  for i, c in args:
+    result.arrayVal[i] = c
 
 proc anyArray*(args: varargs[MsgAny]): MsgAny =
-  result = anyArray(args.len)
-  for c in args: result.arrayVal.add c
+  result = newMsgAny(msgArray)
+  result.arrayVal = newSeq[MsgAny](args.len)
+  for i, c in args:
+    result.arrayVal[i] = c
 
 proc anyBin*(val: string): MsgAny =
   result = newMsgAny(msgBin)

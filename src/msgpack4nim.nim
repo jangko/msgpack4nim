@@ -114,6 +114,9 @@ template undistinct_unpack*(s, f, x) =
   else:
     f(s, distinctBase(x))
 
+
+
+
 when system.cpuEndian == littleEndian:
   proc take8_8(val: uint8): uint8 {.inline.} = val
   proc take8_16(val: uint16): uint8 {.inline.} = uint8(val and 0xFF)
@@ -627,13 +630,20 @@ proc pack_type*[Stream, T](s: Stream, val: set[T]) =
     s.pack_imp_uint64(uint64(e))
 
 proc pack_items_imp*[Stream, T](s: Stream, val: T) {.inline.} =
-  var ss = MsgStream.init(sizeof(T))
-  var count = 0
-  for i in items(val):
-    undistinct_pack(ss, pack, i)
-    inc(count)
-  s.pack_array(count)
-  s.write(ss.data)
+  mixin pack_type
+  when compiles(val.len):
+    let count = val.len
+    s.pack_array(count)
+    for i in items(val):
+      undistinct_pack(s, pack_type, i)
+  else:
+    var ss = MsgStream.init(sizeof(T))
+    var count = 0
+    for i in items(val):
+      undistinct_pack(ss, pack, i)
+      inc(count)
+    s.pack_array(count)
+    s.write(ss.data)
 
 proc pack_map_imp*[Stream, T](s: Stream, val: T) {.inline.} =
   mixin pack_type
@@ -667,8 +677,11 @@ proc pack_type*[Stream; T: enum|range](s: Stream, val: T) =
 proc pack_type*[Stream; T: tuple|object](s: Stream, val: T) =
   mixin pack_type
   var len = 0
-  for field in fields(val):
-    inc(len)
+  when T is tuple:
+    len = tupleLen(T)
+  else:
+    for field in fields(val):
+      inc(len)
 
   template dry_and_wet() =
     when defined(msgpack_obj_to_map):
@@ -871,7 +884,7 @@ proc unpack_type*[Stream, T](s: Stream, val: var seq[T]) =
 
   let len = s.unpack_array()
   if len < 0: raise conversionError("sequence")
-  val = newSeq[T](len)
+  val.setLen(len)
   for i in 0..len-1:
     var x:T
     s.unpack(x)
@@ -905,7 +918,102 @@ macro unpack_proxy(n: typed): untyped =
   else:
     result = quote do:
       s.unpack `n`
+macro unpack_field_by_name(T: typedesc, val: typed, name: untyped): untyped =
+  proc baseIdent(n: NimNode): NimNode =
+    case n.kind
+    of nnkIdent, nnkSym:
+      n
+    of nnkPostfix:
+      baseIdent(n[1])
+    of nnkPragmaExpr:
+      baseIdent(n[0])
+    else:
+      n
 
+  proc addIdentDefs(node: NimNode, fields: var seq[NimNode]) =
+    if node.kind == nnkIdentDefs:
+      for i in 0..node.len-3:
+        fields.add(baseIdent(node[i]))
+
+  proc collectRecList(recList: NimNode, fields: var seq[NimNode]) =
+    for item in recList:
+      case item.kind
+      of nnkIdentDefs:
+        addIdentDefs(item, fields)
+      of nnkRecCase:
+        addIdentDefs(item[0], fields)
+        for i in 1..<item.len:
+          let branch = item[i]
+          if branch.kind in {nnkOfBranch, nnkElse}:
+            if branch.len > 0:
+              collectRecList(branch[^1], fields)
+      else:
+        discard
+
+  proc collectObjectFields(t: NimNode, fields: var seq[NimNode]) =
+    var tt = t
+    case tt.kind
+    of nnkRefTy, nnkPtrTy:
+      tt = tt[0].getTypeImpl
+    else:
+      discard
+    if tt.kind != nnkObjectTy:
+      return
+    let base = tt[1]
+    if base.kind != nnkEmpty:
+      collectObjectFields(base.getTypeImpl, fields)
+    let recList = tt[2]
+    if recList.kind == nnkRecList:
+      collectRecList(recList, fields)
+
+  var t = T.getTypeImpl
+  if t.kind == nnkBracketExpr:
+    t = t[1].getTypeImpl
+
+  var fields: seq[NimNode] = @[]
+  collectObjectFields(t, fields)
+
+  let matched = genSym(nskVar, "matched")
+  var caseStmt = newTree(nnkCaseStmt, name)
+  for field in fields:
+    let fieldName = field.strVal
+    let fieldAccess = newDotExpr(val, field)
+    caseStmt.add newTree(nnkOfBranch, newLit(fieldName), newStmtList(
+      quote do:
+        `matched` = true
+        unpack_proxy(`fieldAccess`)
+    ))
+  caseStmt.add newTree(nnkElse, newStmtList())
+
+  result = newStmtList()
+  result.add quote do:
+    var `matched` = false
+  result.add caseStmt
+  result.add matched
+
+
+macro is_case_object(T: typedesc): untyped =
+  var a = T.getTypeImpl
+  if a.kind != nnkBracketExpr:
+    return newLit(false)
+  let sym = a[1]
+  let t = sym.getTypeImpl
+  var t2: NimNode
+  case t.kind
+  of nnkObjectTy:
+    t2 = t[2]
+  of nnkRefTy:
+    let base = t[0].getTypeImpl
+    if base.kind != nnkObjectTy:
+      return newLit(false)
+    t2 = base[2]
+  else:
+    return newLit(false)
+  if t2.kind == nnkRecList:
+    for ti in t2:
+      if ti.kind == nnkRecCase:
+        return newLit(true)
+  result = newLit(false)
 proc is_string*(s: Stream): bool =
   let c = s.peekChar
   if c >= chr(0xa0) and c <= chr(0xbf):
@@ -959,40 +1067,82 @@ proc is_int*(s: Stream): bool =
   if c >= chr(0xcc) and c <= chr(0xcf):
     return true
 
+proc skip_msg*(s: MsgStream) =
+  var pending = 1
+  while pending > 0:
+    dec pending
+    let c = ord(s.peekChar)
+    case c
+    of 0x00..0x7f, 0xc0..0xc3, 0xe0..0xff:
+      discard s.readChar()
+    of 0x80..0x8f, 0xde..0xdf:
+      let len = s.unpack_map()
+      pending += len * 2
+    of 0x90..0x9f, 0xdc..0xdd:
+      let len = s.unpack_array()
+      pending += len
+    of 0xa0..0xbf, 0xd9..0xdb:
+      let len = s.unpack_string()
+      s.setPosition(s.getPosition() + len)
+    of 0xc4..0xc6:
+      let len = s.unpack_bin()
+      s.setPosition(s.getPosition() + len)
+    of 0xc7..0xc9, 0xd4..0xd8:
+      let (_, extlen) = s.unpack_ext()
+      s.setPosition(s.getPosition() + extlen)
+    of 0xca:
+      discard s.unpack_imp_float32()
+    of 0xcb:
+      discard s.unpack_imp_float64()
+    of 0xcc..0xcf:
+      discard s.unpack_imp_uint64()
+    of 0xd0..0xd3:
+      discard s.unpack_imp_int64()
+    else:
+      raise conversionError("unknown command during skip")
+
 proc skip_msg*(s: Stream) =
-  let c = ord(s.peekChar)
-  var len = 0
-  case c
-  of 0x00..0x7f, 0xc0..0xc3, 0xe0..0xff:
-    discard s.readChar()
-  of 0x80..0x8f, 0xde..0xdf:
-    len = s.unpack_map()
-    for i in 0..len-1:
-      skip_msg(s)
-      skip_msg(s)
-  of 0x90..0x9f, 0xdc..0xdd:
-    len = s.unpack_array()
-    for i in 0..len-1:
-      skip_msg(s)
-  of 0xa0..0xbf, 0xd9..0xdb:
-    len = s.unpack_string()
-    discard s.readExactStr(len)
-  of 0xc4..0xc6:
-    len = s.unpack_bin()
-    discard s.readExactStr(len)
-  of 0xc7..0xc9, 0xd4..0xd8:
-    let (_, extlen) = s.unpack_ext()
-    discard s.readExactStr(extlen)
-  of 0xca:
-    discard s.unpack_imp_float32()
-  of 0xcb:
-    discard s.unpack_imp_float64()
-  of 0xcc..0xcf:
-    discard s.unpack_imp_uint64()
-  of 0xd0..0xd3:
-    discard s.unpack_imp_int64()
-  else:
-    raise conversionError("unknown command during skip")
+  var pending = 1
+  while pending > 0:
+    dec pending
+    let c = ord(s.peekChar)
+    case c
+    of 0x00..0x7f, 0xc0..0xc3, 0xe0..0xff:
+      discard s.readChar()
+    of 0x80..0x8f, 0xde..0xdf:
+      let len = s.unpack_map()
+      pending += len * 2
+    of 0x90..0x9f, 0xdc..0xdd:
+      let len = s.unpack_array()
+      pending += len
+    of 0xa0..0xbf, 0xd9..0xdb:
+      let len = s.unpack_string()
+      if s.setPositionImpl != nil and s.getPositionImpl != nil:
+        s.setPosition(s.getPosition() + len)
+      else:
+        discard s.readExactStr(len)
+    of 0xc4..0xc6:
+      let len = s.unpack_bin()
+      if s.setPositionImpl != nil and s.getPositionImpl != nil:
+        s.setPosition(s.getPosition() + len)
+      else:
+        discard s.readExactStr(len)
+    of 0xc7..0xc9, 0xd4..0xd8:
+      let (_, extlen) = s.unpack_ext()
+      if s.setPositionImpl != nil and s.getPositionImpl != nil:
+        s.setPosition(s.getPosition() + extlen)
+      else:
+        discard s.readExactStr(extlen)
+    of 0xca:
+      discard s.unpack_imp_float32()
+    of 0xcb:
+      discard s.unpack_imp_float64()
+    of 0xcc..0xcf:
+      discard s.unpack_imp_uint64()
+    of 0xd0..0xd3:
+      discard s.unpack_imp_int64()
+    else:
+      raise conversionError("unknown command during skip")
 
 proc unpack_type*[Stream; T: tuple|object](s: Stream, val: var T) =
   template dry_and_wet(): untyped =
@@ -1019,46 +1169,67 @@ proc unpack_type*[Stream; T: tuple|object](s: Stream, val: var T) =
         unpack_proxy(field)
     else:
       let arrayLen = s.unpack_array()
-      var length = 0
-      for field in fields(val):
-        unpack_proxy(field)
-        inc length
-      doAssert(arrayLen == length, "object/tuple len mismatch")
+      when T is tuple:
+        for field in fields(val):
+          unpack_proxy(field)
+        doAssert(arrayLen == tupleLen(T), "object/tuple len mismatch")
+      else:
+        var length = 0
+        for field in fields(val):
+          unpack_proxy(field)
+          inc length
+        doAssert(arrayLen == length, "object/tuple len mismatch")
 
-  when Stream is MsgStream:
-    case s.encodingMode
-    of MSGPACK_OBJ_TO_ARRAY:
-      let arrayLen = s.unpack_array()
-      var len = 0
-      for field in fields(val):
-        unpack_proxy(field)
-        inc len
-      doAssert(arrayLen == len, "object/tuple len mismatch")
-    of MSGPACK_OBJ_TO_MAP:
-      let len = s.unpack_map()
-      var name: string
-      var found: bool
-      for i in 0..len-1:
-        if not s.is_string:
-          s.skip_msg()
-          s.skip_msg()
-          continue
-        unpack_proxy(name)
-        found = false
-        for field, value in fieldPairs(val):
-          if field == name:
-            found = true
-            unpack_proxy(value)
-            break
-        if not found:
-          s.skip_msg()
-    of MSGPACK_OBJ_TO_STREAM:
-      for field in fields(val):
-        unpack_proxy(field)
+  template impl(): untyped =
+    when Stream is MsgStream:
+      case s.encodingMode
+      of MSGPACK_OBJ_TO_ARRAY:
+        let arrayLen = s.unpack_array()
+        when T is tuple:
+          for field in fields(val):
+            unpack_proxy(field)
+          doAssert(arrayLen == tupleLen(T), "object/tuple len mismatch")
+        else:
+          var len = 0
+          for field in fields(val):
+            unpack_proxy(field)
+            inc len
+          doAssert(arrayLen == len, "object/tuple len mismatch")
+      of MSGPACK_OBJ_TO_MAP:
+        let len = s.unpack_map()
+        var name: string
+        for i in 0..len-1:
+          if not s.is_string:
+            s.skip_msg()
+            s.skip_msg()
+            continue
+          unpack_proxy(name)
+          when T is object:
+            if not unpack_field_by_name(T, val, name):
+              s.skip_msg()
+          else:
+            var found = false
+            for field, value in fieldPairs(val):
+              if field == name:
+                found = true
+                unpack_proxy(value)
+                break
+            if not found:
+              s.skip_msg()
+      of MSGPACK_OBJ_TO_STREAM:
+        for field in fields(val):
+          unpack_proxy(field)
+      else:
+        dry_and_wet()
     else:
       dry_and_wet()
+
+  when is_case_object(T):
+    {.push warning[CaseTransition]: off.}
+    impl()
+    {.pop.}
   else:
-    dry_and_wet()
+    impl()
 
 proc unpack_type*[Stream; T: ref](s: Stream, val: var T) =
   if s.peekChar == pack_value_nil:

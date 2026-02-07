@@ -3,26 +3,32 @@ import tables, intsets, lists, deques, sets, strtabs, critbits, streams
 
 {.push gcsafe.}
 
-proc pack_type*(s: Stream, val: IntSet) =
-  var ss = MsgStream.init()
+template pack_list_items*[Stream, T](s: Stream, val: T) =
+  mixin pack_type
   var count = 0
   for i in items(val):
-    ss.pack_imp_int(i)
     inc(count)
   s.pack_array(count)
-  s.write(ss.data)
+  for i in items(val):
+    undistinct_pack(s, pack_type, i)
+
+proc pack_type*(s: Stream, val: IntSet) =
+  let count = val.len
+  s.pack_array(count)
+  for i in items(val):
+    s.pack_imp_int(i)
 
 proc pack_type*[Stream, T](s: Stream, val: SinglyLinkedList[T]) =
-  s.pack_items_imp(val)
+  s.pack_list_items(val)
 
 proc pack_type*[Stream, T](s: Stream, val: DoublyLinkedList[T]) =
-  s.pack_items_imp(val)
+  s.pack_list_items(val)
 
 proc pack_type*[Stream, T](s: Stream, val: SinglyLinkedRing[T]) =
-  s.pack_items_imp(val)
+  s.pack_list_items(val)
 
 proc pack_type*[Stream, T](s: Stream, val: DoublyLinkedRing[T]) =
-  s.pack_items_imp(val)
+  s.pack_list_items(val)
 
 proc pack_type*[Stream, T](s: Stream, val: Deque[T]) =
   s.pack_array(val.len)
@@ -65,20 +71,44 @@ proc pack_type*[Stream, T](s: Stream, val: CritBitTree[T]) =
     s.pack_map_imp(val)
 
 proc unpack_type*[Stream, T](s: Stream, val: var SinglyLinkedList[T]) =
+  let len = s.unpack_array()
+  if len < 0: raise conversionError("singly linked list")
+
   val = initSinglyLinkedList[T]()
-  s.unpack_items_imp(val, "singly linked list")
+  for i in 0..<len:
+    var x: T
+    s.unpack(x)
+    val.add(x)
 
 proc unpack_type*[Stream, T](s: Stream, val: var DoublyLinkedList[T]) =
+  let len = s.unpack_array()
+  if len < 0: raise conversionError("doubly linked list")
+
   val = initDoublyLinkedList[T]()
-  s.unpack_items_imp(val, "doubly linked list")
+  for i in 0..<len:
+    var x: T
+    s.unpack(x)
+    val.add(x)
 
 proc unpack_type*[Stream, T](s: Stream, val: var SinglyLinkedRing[T]) =
+  let len = s.unpack_array()
+  if len < 0: raise conversionError("singly linked ring")
+
   val = initSinglyLinkedRing[T]()
-  s.unpack_items_imp(val, "singly linked ring")
+  for i in 0..<len:
+    var x: T
+    s.unpack(x)
+    val.add(x)
 
 proc unpack_type*[Stream, T](s: Stream, val: var DoublyLinkedRing[T]) =
+  let len = s.unpack_array()
+  if len < 0: raise conversionError("doubly linked ring")
+
   val = initDoublyLinkedRing[T]()
-  s.unpack_items_imp(val, "doubly linked ring")
+  for i in 0..<len:
+    var x: T
+    s.unpack(x)
+    val.add(x)
 
 proc unpack_type*[Stream, T](s: Stream, val: var Deque[T]) =
   let len = s.unpack_array()

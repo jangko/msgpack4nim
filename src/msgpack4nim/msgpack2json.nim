@@ -13,9 +13,13 @@ proc toJsonNode*(s: Stream): JsonNode =
     result = JsonNode(kind: JObject)
     result.fields = initOrderedTable[string, JsonNode](nextPowerOfTwo(len))
     for i in 0..<len:
-      let key = toJsonNode(s)
-      if key.kind != JString: raise conversionError("json key needs a string")
-      result.fields[key.getStr()] = toJsonNode(s)
+      if not s.is_string:
+        s.skip_msg()
+        raise conversionError("json key needs a string")
+      let keyLen = s.unpack_string()
+      if keyLen < 0: raise conversionError("json key needs a string")
+      let key = s.readExactStr(keyLen)
+      result.fields[key] = toJsonNode(s)
   of 0x90..0x9f, 0xdc..0xdd:
     let len = s.unpack_array()
     result = JsonNode(kind: JArray)
