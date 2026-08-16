@@ -118,7 +118,7 @@ ss.unpack(x) #unpack as usual
 | CritBitTree[void]* | array | JArray |
 | object/tuple | array/map | JObject |
 
-* \(\*\) please import msgpakc4collection for Nim standard library collections, they are no longer part of codec core
+* \(\*\) please import msgpack4collection for Nim standard library collections, they are no longer part of codec core
 * \(\*\*\) provide your own implementation if you want to override default behavior
 
 ## distinct types
